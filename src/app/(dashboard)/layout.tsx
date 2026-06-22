@@ -33,6 +33,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
         <nav style={{ display: "flex", gap: 12 }}>
           <Link href="/dashboard">Dashboard</Link>
+          {role !== "RESIDENT" ? (
+            <>
+              <Link href="/dashboard/buildings">Buildings</Link>
+              <Link href="/dashboard/residents">Residents</Link>
+            </>
+          ) : null}
         </nav>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
