@@ -35,6 +35,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/dashboard/maintenance">Maintenance</Link>
           <Link href="/dashboard/facilities">Facilities</Link>
+          <Link href="/dashboard/billing/invoices">Billing</Link>
           {role !== "RESIDENT" ? (
             <>
               <Link href="/dashboard/buildings">Buildings</Link>
