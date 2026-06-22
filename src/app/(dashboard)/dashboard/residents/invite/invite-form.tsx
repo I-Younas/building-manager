@@ -74,8 +74,8 @@ export function InviteForm({
       ) : null}
 
       <label className={labelClasses}>
-        Lock to a specific email (optional)
-        <input name="email" type="email" className={inputClasses} />
+        Email
+        <input name="email" type="email" required className={inputClasses} />
       </label>
 
       {error ? <ErrorText>{error}</ErrorText> : null}

@@ -71,7 +71,7 @@ export async function createInviteCode(
       role,
       unitId,
       relationship,
-      email: email || null,
+      email,
       createdById: user.id,
       expiresAt: new Date(Date.now() + INVITE_DURATION_MS),
     },
