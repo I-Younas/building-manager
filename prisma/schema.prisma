@@ -1,0 +1,433 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OrgRole {
+  ORG_ADMIN
+  STAFF
+  RESIDENT
+}
+
+enum UnitResidentRelationship {
+  OWNER
+  TENANT
+  FAMILY_MEMBER
+  OTHER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  VOID
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHEQUE
+  CARD
+  ONLINE
+  OTHER
+}
+
+enum VisitorStatus {
+  EXPECTED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum AnnouncementScope {
+  ORGANIZATION
+  BUILDING
+}
+
+// ---------- Global identity ----------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships         OrgMembership[]
+  sessions            Session[]
+  unitMemberships     UnitResident[]
+  assignedTickets     MaintenanceTicket[]   @relation("AssignedStaff")
+  reportedTickets     MaintenanceTicket[]   @relation("ReportedBy")
+  ticketComments      TicketComment[]
+  ticketStatusLogs    TicketStatusHistory[]
+  requestedBookings   FacilityBooking[]     @relation("RequestedBy")
+  approvedBookings    FacilityBooking[]     @relation("ApprovedBy")
+  issuedInvoices      Invoice[]             @relation("IssuedBy")
+  recordedPayments    Payment[]             @relation("RecordedBy")
+  registeredVisitors  Visitor[]             @relation("RegisteredBy")
+  postedAnnouncements Announcement[]        @relation("PostedBy")
+  createdInvites      InviteCode[]          @relation("CreatedInvite")
+}
+
+model Session {
+  id                   String    @id @default(cuid())
+  userId               String
+  tokenHash            String    @unique
+  activeOrganizationId String?
+  expiresAt            DateTime
+  createdAt            DateTime  @default(now())
+  userAgent            String?
+  ipAddress            String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ---------- Tenancy ----------
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships   OrgMembership[]
+  buildings     Building[]
+  announcements Announcement[]
+  inviteCodes   InviteCode[]
+}
+
+model OrgMembership {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           OrgRole
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, role])
+}
+
+model Building {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  addressLine1   String
+  addressLine2   String?
+  city           String
+  region         String?
+  postalCode     String?
+  country        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  units         Unit[]
+  facilities    Facility[]
+  announcements Announcement[]
+
+  @@index([organizationId])
+}
+
+model Unit {
+  id             String   @id @default(cuid())
+  organizationId String
+  buildingId     String
+  unitNumber     String
+  floor          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  building      Building            @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  residentLinks UnitResident[]
+  tickets       MaintenanceTicket[]
+  bookings      FacilityBooking[]
+  invoices      Invoice[]
+  visitors      Visitor[]
+
+  @@unique([buildingId, unitNumber])
+  @@index([organizationId])
+}
+
+model UnitResident {
+  id           String                   @id @default(cuid())
+  unitId       String
+  userId       String
+  relationship UnitResidentRelationship
+  isPrimary    Boolean                  @default(false)
+  createdAt    DateTime                 @default(now())
+
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([unitId, userId])
+  @@index([userId])
+}
+
+// Resident (or staff) onboarding without email delivery.
+model InviteCode {
+  id             String                    @id @default(cuid())
+  organizationId String
+  code           String                    @unique
+  role           OrgRole
+  unitId         String?
+  relationship   UnitResidentRelationship?
+  email          String?
+  createdById    String
+  expiresAt      DateTime
+  usedAt         DateTime?
+  usedByUserId   String?
+  createdAt      DateTime                  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation("CreatedInvite", fields: [createdById], references: [id])
+
+  @@index([organizationId])
+}
+
+// ---------- Module 1: Maintenance & Complaints ----------
+
+model MaintenanceTicket {
+  id             String         @id @default(cuid())
+  organizationId String
+  unitId         String
+  reportedById   String
+  assignedToId   String?
+  title          String
+  description    String
+  category       String?
+  status         TicketStatus   @default(OPEN)
+  priority       TicketPriority @default(MEDIUM)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  resolvedAt     DateTime?
+
+  unit       Unit  @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  reportedBy User  @relation("ReportedBy", fields: [reportedById], references: [id])
+  assignedTo User? @relation("AssignedStaff", fields: [assignedToId], references: [id])
+
+  comments      TicketComment[]
+  statusHistory TicketStatusHistory[]
+
+  @@index([organizationId, status])
+  @@index([unitId])
+  @@index([assignedToId])
+}
+
+model TicketComment {
+  id         String   @id @default(cuid())
+  ticketId   String
+  authorId   String
+  body       String
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  ticket MaintenanceTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User              @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId])
+}
+
+model TicketStatusHistory {
+  id          String        @id @default(cuid())
+  ticketId    String
+  changedById String
+  fromStatus  TicketStatus?
+  toStatus    TicketStatus
+  note        String?
+  createdAt   DateTime      @default(now())
+
+  ticket    MaintenanceTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  changedBy User              @relation(fields: [changedById], references: [id])
+
+  @@index([ticketId])
+}
+
+// ---------- Module 2: Facility Booking ----------
+
+model Facility {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  buildingId         String
+  name               String
+  description        String?
+  requiresApproval   Boolean  @default(true)
+  openTime           String
+  closeTime          String
+  minNoticeHours     Int      @default(24)
+  maxDurationMinutes Int      @default(120)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  building Building          @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  bookings FacilityBooking[]
+
+  @@index([organizationId])
+  @@index([buildingId])
+}
+
+model FacilityBooking {
+  id             String        @id @default(cuid())
+  organizationId String
+  facilityId     String
+  unitId         String
+  requestedById  String
+  approvedById   String?
+  startsAt       DateTime
+  endsAt         DateTime
+  status         BookingStatus @default(PENDING)
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  facility    Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  unit        Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  requestedBy User     @relation("RequestedBy", fields: [requestedById], references: [id])
+  approvedBy  User?    @relation("ApprovedBy", fields: [approvedById], references: [id])
+
+  // Cheap guard against exact-duplicate slot collisions; true overlap
+  // (intersecting ranges) is enforced in the server action, not the DB.
+  @@unique([facilityId, startsAt])
+  @@index([organizationId])
+  @@index([facilityId, startsAt, endsAt])
+  @@index([unitId])
+}
+
+// ---------- Module 3: Billing & Invoicing ----------
+
+model Invoice {
+  id             String        @id @default(cuid())
+  organizationId String
+  unitId         String
+  issuedById     String?
+  invoiceNumber  String
+  status         InvoiceStatus @default(DRAFT)
+  issueDate      DateTime
+  dueDate        DateTime
+  currency       String        @default("USD")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  unit      Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  issuedBy  User?             @relation("IssuedBy", fields: [issuedById], references: [id])
+  lineItems InvoiceLineItem[]
+  payments  Payment[]
+
+  @@unique([organizationId, invoiceNumber])
+  @@index([organizationId, status])
+  @@index([unitId])
+}
+
+model InvoiceLineItem {
+  id          String @id @default(cuid())
+  invoiceId   String
+  description String
+  amountCents Int
+  quantity    Int    @default(1)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  invoiceId    String
+  recordedById String
+  amountCents  Int
+  method       PaymentMethod
+  reference    String?
+  paidAt       DateTime
+  createdAt    DateTime      @default(now())
+
+  invoice    Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  recordedBy User    @relation("RecordedBy", fields: [recordedById], references: [id])
+
+  @@index([invoiceId])
+}
+
+// ---------- Module 4: Visitor & Announcement Management ----------
+
+model Visitor {
+  id             String        @id @default(cuid())
+  organizationId String
+  unitId         String
+  registeredById String
+  name           String
+  phone          String?
+  purpose        String?
+  expectedAt     DateTime
+  checkedInAt    DateTime?
+  checkedOutAt   DateTime?
+  status         VisitorStatus @default(EXPECTED)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  unit         Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  registeredBy User @relation("RegisteredBy", fields: [registeredById], references: [id])
+
+  @@index([organizationId, expectedAt])
+  @@index([unitId])
+}
+
+model Announcement {
+  id             String            @id @default(cuid())
+  organizationId String
+  buildingId     String?
+  postedById     String
+  title          String
+  body           String
+  scope          AnnouncementScope
+  publishedAt    DateTime          @default(now())
+  expiresAt      DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  building     Building?    @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  postedBy     User         @relation("PostedBy", fields: [postedById], references: [id])
+
+  @@index([organizationId, publishedAt])
+  @@index([buildingId])
+}
