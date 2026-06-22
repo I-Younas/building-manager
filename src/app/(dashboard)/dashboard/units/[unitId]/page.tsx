@@ -32,7 +32,9 @@ export default async function UnitDetailPage({
         title={`Unit ${unit.unitNumber}`}
         description={unit.floor ? `Floor ${unit.floor}` : undefined}
         actions={
-          <LinkButton href={`/dashboard/residents/invite?buildingId=${unit.buildingId}&unitNumber=${unit.unitNumber}`}>
+          <LinkButton
+            href={`/dashboard/residents/invite?buildingName=${encodeURIComponent(unit.building.name)}&unitNumber=${encodeURIComponent(unit.unitNumber)}`}
+          >
             Invite a resident
           </LinkButton>
         }

@@ -166,6 +166,7 @@ model Building {
   facilities    Facility[]
   announcements Announcement[]
 
+  @@unique([organizationId, name])
   @@index([organizationId])
 }
 

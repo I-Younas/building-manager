@@ -4,15 +4,11 @@ import { useActionState, useState } from "react";
 import { createInviteCode } from "@/lib/actions/invites";
 import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
-type Building = { id: string; name: string };
-
 export function InviteForm({
-  buildings,
-  defaultBuildingId,
+  defaultBuildingName,
   defaultUnitNumber,
 }: {
-  buildings: Building[];
-  defaultBuildingId?: string;
+  defaultBuildingName?: string;
   defaultUnitNumber?: string;
 }) {
   const [state, formAction, pending] = useActionState(createInviteCode, undefined);
@@ -40,16 +36,14 @@ export function InviteForm({
         <>
           <label className={labelClasses}>
             Building
-            <select name="buildingId" defaultValue={defaultBuildingId ?? ""} required className={inputClasses}>
-              <option value="" disabled>
-                Select a building
-              </option>
-              {buildings.map((building) => (
-                <option key={building.id} value={building.id}>
-                  {building.name}
-                </option>
-              ))}
-            </select>
+            <input
+              name="buildingName"
+              required
+              maxLength={200}
+              placeholder="e.g. Maple Towers"
+              defaultValue={defaultBuildingName ?? ""}
+              className={inputClasses}
+            />
           </label>
 
           <label className={labelClasses}>
@@ -64,7 +58,7 @@ export function InviteForm({
             />
           </label>
           <p className="text-xs text-slate-500">
-            If this unit doesn&apos;t exist yet, it will be created automatically.
+            If this building or unit doesn&apos;t exist yet, it will be created automatically.
           </p>
 
           <label className={labelClasses}>

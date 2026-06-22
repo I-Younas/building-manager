@@ -30,6 +30,13 @@ export async function createBuilding(
     return { error: parsed.error.issues[0]?.message ?? "Please check the form and try again." };
   }
 
+  const existing = await prisma.building.findFirst({
+    where: { organizationId, name: { equals: parsed.data.name, mode: "insensitive" } },
+  });
+  if (existing) {
+    return { error: "A building with this name already exists." };
+  }
+
   const building = await prisma.building.create({
     data: { organizationId, ...parsed.data },
   });
@@ -47,6 +54,13 @@ export async function updateBuilding(
   const parsed = parseBuildingForm(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please check the form and try again." };
+  }
+
+  const existing = await prisma.building.findFirst({
+    where: { organizationId, name: { equals: parsed.data.name, mode: "insensitive" }, id: { not: buildingId } },
+  });
+  if (existing) {
+    return { error: "A building with this name already exists." };
   }
 
   const result = await prisma.building.updateMany({

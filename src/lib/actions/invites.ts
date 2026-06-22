@@ -20,7 +20,7 @@ export async function createInviteCode(
 
   const parsed = createInviteSchema.safeParse({
     role: formData.get("role"),
-    buildingId: formData.get("buildingId") ?? undefined,
+    buildingName: formData.get("buildingName") ?? undefined,
     unitNumber: formData.get("unitNumber") ?? undefined,
     relationship: formData.get("relationship") ?? undefined,
     email: formData.get("email"),
@@ -34,14 +34,23 @@ export async function createInviteCode(
   let relationship: "OWNER" | "TENANT" | "FAMILY_MEMBER" | "OTHER" | null = null;
 
   if (role === "RESIDENT") {
-    if (!parsed.data.buildingId || !parsed.data.unitNumber || !parsed.data.relationship) {
-      return { error: "Select a building, enter a unit number, and choose a relationship for a resident invite." };
+    if (!parsed.data.buildingName || !parsed.data.unitNumber || !parsed.data.relationship) {
+      return { error: "Enter a building, a unit number, and choose a relationship for a resident invite." };
     }
-    const building = await prisma.building.findFirst({
-      where: { id: parsed.data.buildingId, organizationId },
+
+    let building = await prisma.building.findFirst({
+      where: { organizationId, name: { equals: parsed.data.buildingName, mode: "insensitive" } },
     });
     if (!building) {
-      return { error: "Building not found." };
+      building = await prisma.building.create({
+        data: {
+          organizationId,
+          name: parsed.data.buildingName,
+          addressLine1: "",
+          city: "",
+          country: "",
+        },
+      });
     }
 
     const unit = await prisma.unit.upsert({

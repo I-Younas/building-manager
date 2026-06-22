@@ -1,26 +1,20 @@
 import { requireAdminOrStaff } from "@/lib/auth/dal";
-import { prisma } from "@/lib/db";
 import { InviteForm } from "./invite-form";
 import { Card, PageHeader } from "@/components/ui";
 
 export default async function InviteResidentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ buildingId?: string; unitNumber?: string }>;
+  searchParams: Promise<{ buildingName?: string; unitNumber?: string }>;
 }) {
-  const { organizationId } = await requireAdminOrStaff();
-  const { buildingId, unitNumber } = await searchParams;
-
-  const buildings = await prisma.building.findMany({
-    where: { organizationId },
-    orderBy: { name: "asc" },
-  });
+  await requireAdminOrStaff();
+  const { buildingName, unitNumber } = await searchParams;
 
   return (
     <div>
       <PageHeader title="Invite a member" />
       <Card className="max-w-lg">
-        <InviteForm buildings={buildings} defaultBuildingId={buildingId} defaultUnitNumber={unitNumber} />
+        <InviteForm defaultBuildingName={buildingName} defaultUnitNumber={unitNumber} />
       </Card>
     </div>
   );
