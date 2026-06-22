@@ -20,8 +20,9 @@ export async function createInviteCode(
 
   const parsed = createInviteSchema.safeParse({
     role: formData.get("role"),
-    unitId: formData.get("unitId"),
-    relationship: formData.get("relationship"),
+    buildingId: formData.get("buildingId") ?? undefined,
+    unitNumber: formData.get("unitNumber") ?? undefined,
+    relationship: formData.get("relationship") ?? undefined,
     email: formData.get("email"),
   });
   if (!parsed.success) {
@@ -33,15 +34,21 @@ export async function createInviteCode(
   let relationship: "OWNER" | "TENANT" | "FAMILY_MEMBER" | "OTHER" | null = null;
 
   if (role === "RESIDENT") {
-    if (!parsed.data.unitId || !parsed.data.relationship) {
-      return { error: "Select a unit and relationship for a resident invite." };
+    if (!parsed.data.buildingId || !parsed.data.unitNumber || !parsed.data.relationship) {
+      return { error: "Select a building, enter a unit number, and choose a relationship for a resident invite." };
     }
-    const unit = await prisma.unit.findFirst({
-      where: { id: parsed.data.unitId, organizationId },
+    const building = await prisma.building.findFirst({
+      where: { id: parsed.data.buildingId, organizationId },
     });
-    if (!unit) {
-      return { error: "Unit not found." };
+    if (!building) {
+      return { error: "Building not found." };
     }
+
+    const unit = await prisma.unit.upsert({
+      where: { buildingId_unitNumber: { buildingId: building.id, unitNumber: parsed.data.unitNumber } },
+      create: { organizationId, buildingId: building.id, unitNumber: parsed.data.unitNumber },
+      update: {},
+    });
     unitId = unit.id;
     relationship = parsed.data.relationship;
   }

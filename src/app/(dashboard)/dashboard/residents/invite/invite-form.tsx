@@ -4,9 +4,17 @@ import { useActionState, useState } from "react";
 import { createInviteCode } from "@/lib/actions/invites";
 import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
-type Unit = { id: string; unitNumber: string; buildingName: string };
+type Building = { id: string; name: string };
 
-export function InviteForm({ units, defaultUnitId }: { units: Unit[]; defaultUnitId?: string }) {
+export function InviteForm({
+  buildings,
+  defaultBuildingId,
+  defaultUnitNumber,
+}: {
+  buildings: Building[];
+  defaultBuildingId?: string;
+  defaultUnitNumber?: string;
+}) {
   const [state, formAction, pending] = useActionState(createInviteCode, undefined);
   const [role, setRole] = useState<"RESIDENT" | "STAFF">("RESIDENT");
 
@@ -31,18 +39,33 @@ export function InviteForm({ units, defaultUnitId }: { units: Unit[]; defaultUni
       {role === "RESIDENT" ? (
         <>
           <label className={labelClasses}>
-            Unit
-            <select name="unitId" defaultValue={defaultUnitId ?? ""} required className={inputClasses}>
+            Building
+            <select name="buildingId" defaultValue={defaultBuildingId ?? ""} required className={inputClasses}>
               <option value="" disabled>
-                Select a unit
+                Select a building
               </option>
-              {units.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.buildingName} / Unit {unit.unitNumber}
+              {buildings.map((building) => (
+                <option key={building.id} value={building.id}>
+                  {building.name}
                 </option>
               ))}
             </select>
           </label>
+
+          <label className={labelClasses}>
+            Unit number
+            <input
+              name="unitNumber"
+              required
+              maxLength={50}
+              placeholder="e.g. 101"
+              defaultValue={defaultUnitNumber ?? ""}
+              className={inputClasses}
+            />
+          </label>
+          <p className="text-xs text-slate-500">
+            If this unit doesn&apos;t exist yet, it will be created automatically.
+          </p>
 
           <label className={labelClasses}>
             Relationship

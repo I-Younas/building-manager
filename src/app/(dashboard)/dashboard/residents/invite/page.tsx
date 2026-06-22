@@ -6,29 +6,21 @@ import { Card, PageHeader } from "@/components/ui";
 export default async function InviteResidentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ unitId?: string }>;
+  searchParams: Promise<{ buildingId?: string; unitNumber?: string }>;
 }) {
   const { organizationId } = await requireAdminOrStaff();
-  const { unitId } = await searchParams;
+  const { buildingId, unitNumber } = await searchParams;
 
-  const units = await prisma.unit.findMany({
+  const buildings = await prisma.building.findMany({
     where: { organizationId },
-    include: { building: true },
-    orderBy: [{ building: { name: "asc" } }, { unitNumber: "asc" }],
+    orderBy: { name: "asc" },
   });
 
   return (
     <div>
       <PageHeader title="Invite a member" />
       <Card className="max-w-lg">
-        <InviteForm
-          units={units.map((unit) => ({
-            id: unit.id,
-            unitNumber: unit.unitNumber,
-            buildingName: unit.building.name,
-          }))}
-          defaultUnitId={unitId}
-        />
+        <InviteForm buildings={buildings} defaultBuildingId={buildingId} defaultUnitNumber={unitNumber} />
       </Card>
     </div>
   );

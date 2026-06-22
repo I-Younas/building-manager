@@ -31,7 +31,11 @@ export default async function UnitDetailPage({
       <PageHeader
         title={`Unit ${unit.unitNumber}`}
         description={unit.floor ? `Floor ${unit.floor}` : undefined}
-        actions={<LinkButton href={`/dashboard/residents/invite?unitId=${unit.id}`}>Invite a resident</LinkButton>}
+        actions={
+          <LinkButton href={`/dashboard/residents/invite?buildingId=${unit.buildingId}&unitNumber=${unit.unitNumber}`}>
+            Invite a resident
+          </LinkButton>
+        }
       />
 
       <h2 className="mb-3 text-lg font-semibold text-slate-900">Residents</h2>
