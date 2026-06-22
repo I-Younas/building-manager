@@ -2,6 +2,7 @@ import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { createAnnouncement } from "@/lib/actions/announcements";
 import { AnnouncementForm } from "../announcement-form";
+import { PageHeader } from "@/components/ui";
 
 export default async function NewAnnouncementPage() {
   const { organizationId } = await requireAdminOrStaff();
@@ -9,7 +10,7 @@ export default async function NewAnnouncementPage() {
 
   return (
     <div>
-      <h1>Post announcement</h1>
+      <PageHeader title="Post announcement" />
       <AnnouncementForm action={createAnnouncement} buildings={buildings} submitLabel="Post announcement" />
     </div>
   );

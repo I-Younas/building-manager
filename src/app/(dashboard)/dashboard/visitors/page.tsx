@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { checkInVisitor, checkOutVisitor, cancelVisitorRegistration } from "@/lib/actions/visitors";
+import { Button, Card, EmptyState, inputClasses, LinkButton, PageHeader, StatusBadge } from "@/components/ui";
 
 export default async function VisitorsPage({
   searchParams,
@@ -33,49 +33,72 @@ export default async function VisitorsPage({
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h1>{isAdmin ? "Visitors" : "My visitors"}</h1>
-        <Link href="/dashboard/visitors/new">Register a visitor</Link>
-      </div>
+      <PageHeader
+        title={isAdmin ? "Visitors" : "My visitors"}
+        actions={<LinkButton href="/dashboard/visitors/new">Register a visitor</LinkButton>}
+      />
 
       {isAdmin ? (
-        <form style={{ marginBottom: 16 }}>
-          <input type="search" name="q" defaultValue={q ?? ""} placeholder="Search by visitor name" />
-          <button type="submit">Search</button>
+        <form className="mb-6 flex gap-2">
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Search by visitor name"
+            className={`${inputClasses} mt-0 max-w-xs`}
+          />
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
         </form>
       ) : null}
 
       {visitors.length === 0 ? (
-        <p>No visitors registered yet.</p>
+        <EmptyState title="No visitors registered yet" />
       ) : (
-        <ul>
+        <div className="flex flex-col gap-3">
           {visitors.map((visitor) => (
-            <li key={visitor.id} style={{ marginBottom: 12 }}>
-              <strong>{visitor.name}</strong> — {visitor.unit.building.name} / Unit {visitor.unit.unitNumber}
-              <br />
-              Expected {visitor.expectedAt.toLocaleString()} · {visitor.status}
-              {visitor.phone ? ` · ${visitor.phone}` : ""}
-              {visitor.purpose ? ` · ${visitor.purpose}` : ""}
-              {isAdmin ? ` · registered by ${visitor.registeredBy.name}` : ""}
-              <br />
-              {isAdmin && visitor.status === "EXPECTED" ? (
-                <form action={checkInVisitor.bind(null, visitor.id)} style={{ display: "inline" }}>
-                  <button type="submit">Check in</button>
-                </form>
-              ) : null}{" "}
-              {isAdmin && visitor.status === "CHECKED_IN" ? (
-                <form action={checkOutVisitor.bind(null, visitor.id)} style={{ display: "inline" }}>
-                  <button type="submit">Check out</button>
-                </form>
-              ) : null}{" "}
-              {visitor.status === "EXPECTED" ? (
-                <form action={cancelVisitorRegistration.bind(null, visitor.id)} style={{ display: "inline" }}>
-                  <button type="submit">Cancel</button>
-                </form>
-              ) : null}
-            </li>
+            <Card key={visitor.id}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-medium text-slate-900">{visitor.name}</p>
+                  <p className="text-sm text-slate-500">
+                    {visitor.unit.building.name} / Unit {visitor.unit.unitNumber} · Expected{" "}
+                    {visitor.expectedAt.toLocaleString()}
+                    {visitor.phone ? ` · ${visitor.phone}` : ""}
+                    {visitor.purpose ? ` · ${visitor.purpose}` : ""}
+                    {isAdmin ? ` · registered by ${visitor.registeredBy.name}` : ""}
+                  </p>
+                </div>
+                <StatusBadge status={visitor.status} />
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                {isAdmin && visitor.status === "EXPECTED" ? (
+                  <form action={checkInVisitor.bind(null, visitor.id)}>
+                    <Button type="submit" size="sm">
+                      Check in
+                    </Button>
+                  </form>
+                ) : null}
+                {isAdmin && visitor.status === "CHECKED_IN" ? (
+                  <form action={checkOutVisitor.bind(null, visitor.id)}>
+                    <Button type="submit" size="sm">
+                      Check out
+                    </Button>
+                  </form>
+                ) : null}
+                {visitor.status === "EXPECTED" ? (
+                  <form action={cancelVisitorRegistration.bind(null, visitor.id)}>
+                    <Button type="submit" variant="danger" size="sm">
+                      Cancel
+                    </Button>
+                  </form>
+                ) : null}
+              </div>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

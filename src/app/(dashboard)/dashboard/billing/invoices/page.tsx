@@ -3,6 +3,18 @@ import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { formatCents } from "@/lib/money";
 import { getDisplayStatus } from "@/lib/invoice-status";
+import {
+  EmptyState,
+  LinkButton,
+  PageHeader,
+  StatusBadge,
+  tableClasses,
+  tableWrapClasses,
+  tdClasses,
+  thClasses,
+  theadClasses,
+  trClasses,
+} from "@/components/ui";
 
 export default async function InvoicesPage() {
   const { user, organizationId, role } = await requireOrgScope();
@@ -29,26 +41,52 @@ export default async function InvoicesPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h1>{isAdmin ? "Invoices" : "My invoices"}</h1>
-        {isAdmin ? <Link href="/dashboard/billing/invoices/new">Create invoice</Link> : null}
-      </div>
+      <PageHeader
+        title={isAdmin ? "Invoices" : "My invoices"}
+        actions={isAdmin ? <LinkButton href="/dashboard/billing/invoices/new">Create invoice</LinkButton> : null}
+      />
 
       {invoices.length === 0 ? (
-        <p>No invoices yet.</p>
+        <EmptyState title="No invoices yet" />
       ) : (
-        <ul>
-          {invoices.map((invoice) => {
-            const total = invoice.lineItems.reduce((sum, item) => sum + item.amountCents * item.quantity, 0);
-            return (
-              <li key={invoice.id}>
-                <Link href={`/dashboard/billing/invoices/${invoice.id}`}>{invoice.invoiceNumber}</Link> —{" "}
-                {invoice.unit.building.name} / Unit {invoice.unit.unitNumber} — {formatCents(total)} ·{" "}
-                {getDisplayStatus(invoice)} · due {invoice.dueDate.toLocaleDateString()}
-              </li>
-            );
-          })}
-        </ul>
+        <div className={tableWrapClasses}>
+          <table className={tableClasses}>
+            <thead className={theadClasses}>
+              <tr>
+                <th className={thClasses}>Invoice</th>
+                <th className={thClasses}>Unit</th>
+                <th className={thClasses}>Total</th>
+                <th className={thClasses}>Status</th>
+                <th className={thClasses}>Due</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {invoices.map((invoice) => {
+                const total = invoice.lineItems.reduce((sum, item) => sum + item.amountCents * item.quantity, 0);
+                return (
+                  <tr key={invoice.id} className={trClasses}>
+                    <td className={tdClasses}>
+                      <Link
+                        href={`/dashboard/billing/invoices/${invoice.id}`}
+                        className="font-medium text-blue-600 hover:underline"
+                      >
+                        {invoice.invoiceNumber}
+                      </Link>
+                    </td>
+                    <td className={tdClasses}>
+                      {invoice.unit.building.name} / Unit {invoice.unit.unitNumber}
+                    </td>
+                    <td className={tdClasses}>{formatCents(total)}</td>
+                    <td className={tdClasses}>
+                      <StatusBadge status={getDisplayStatus(invoice)} />
+                    </td>
+                    <td className={tdClasses}>{invoice.dueDate.toLocaleDateString()}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

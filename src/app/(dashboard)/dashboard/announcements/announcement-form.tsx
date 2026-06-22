@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import type { FormActionState } from "@/lib/actions/announcements";
+import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
 type Action = (state: FormActionState, formData: FormData) => Promise<FormActionState>;
 type Building = { id: string; name: string };
@@ -27,23 +28,31 @@ export function AnnouncementForm({
   const [scope, setScope] = useState<"ORGANIZATION" | "BUILDING">(defaultValues?.scope ?? "ORGANIZATION");
 
   return (
-    <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 560 }}>
-      <label>
+    <form action={formAction} className={`${formStackClasses} max-w-2xl`}>
+      <label className={labelClasses}>
         Title
-        <input name="title" required maxLength={200} defaultValue={defaultValues?.title} />
+        <input name="title" required maxLength={200} defaultValue={defaultValues?.title} className={inputClasses} />
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Body
-        <textarea name="body" required maxLength={5000} rows={5} defaultValue={defaultValues?.body} />
+        <textarea
+          name="body"
+          required
+          maxLength={5000}
+          rows={5}
+          defaultValue={defaultValues?.body}
+          className={inputClasses}
+        />
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Scope
         <select
           name="scope"
           value={scope}
           onChange={(e) => setScope(e.target.value as "ORGANIZATION" | "BUILDING")}
+          className={inputClasses}
         >
           <option value="ORGANIZATION">Entire organization</option>
           <option value="BUILDING">Specific building</option>
@@ -51,9 +60,9 @@ export function AnnouncementForm({
       </label>
 
       {scope === "BUILDING" ? (
-        <label>
+        <label className={labelClasses}>
           Building
-          <select name="buildingId" required defaultValue={defaultValues?.buildingId ?? ""}>
+          <select name="buildingId" required defaultValue={defaultValues?.buildingId ?? ""} className={inputClasses}>
             <option value="" disabled>
               Select a building
             </option>
@@ -66,20 +75,21 @@ export function AnnouncementForm({
         </label>
       ) : null}
 
-      <label>
+      <label className={labelClasses}>
         Expires on (optional)
         <input
           type="date"
           name="expiresAt"
           defaultValue={defaultValues?.expiresAt ? defaultValues.expiresAt.toISOString().slice(0, 10) : ""}
+          className={inputClasses}
         />
       </label>
 
-      {state?.error ? <p role="alert">{state.error}</p> : null}
+      {state?.error ? <ErrorText>{state.error}</ErrorText> : null}
 
-      <button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Saving..." : submitLabel}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { assignTicket } from "@/lib/actions/maintenance";
+import { Button, ErrorText, inputClasses, labelClasses } from "@/components/ui";
 
 export function AssignForm({
   ticketId,
@@ -15,10 +16,10 @@ export function AssignForm({
   const [state, formAction, pending] = useActionState(assignTicket.bind(null, ticketId), undefined);
 
   return (
-    <form action={formAction} style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-      <label>
+    <form action={formAction} className="flex flex-col gap-3">
+      <label className={labelClasses}>
         Assignee
-        <select name="assigneeUserId" defaultValue={currentAssigneeId ?? ""}>
+        <select name="assigneeUserId" defaultValue={currentAssigneeId ?? ""} className={inputClasses}>
           <option value="">Unassigned</option>
           {staff.map((s) => (
             <option key={s.id} value={s.id}>
@@ -27,10 +28,10 @@ export function AssignForm({
           ))}
         </select>
       </label>
-      <button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} size="sm" className="self-start">
         {pending ? "Saving..." : "Save assignment"}
-      </button>
-      {state?.error ? <p role="alert">{state.error}</p> : null}
+      </Button>
+      {state?.error ? <ErrorText>{state.error}</ErrorText> : null}
     </form>
   );
 }

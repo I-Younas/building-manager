@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { cancelBooking } from "@/lib/actions/bookings";
 import { DecisionForms } from "./decision-forms";
+import { Button, Card, EmptyState, LinkButton, PageHeader, StatusBadge } from "@/components/ui";
 
 function formatRange(start: Date, end: Date) {
   return `${start.toLocaleString()} – ${end.toLocaleTimeString()}`;
@@ -23,44 +23,57 @@ export default async function BookingsPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h1>{isAdmin ? "Facility bookings" : "My bookings"}</h1>
-        <Link href="/dashboard/facilities">Browse facilities</Link>
-      </div>
+      <PageHeader
+        title={isAdmin ? "Facility bookings" : "My bookings"}
+        actions={
+          <LinkButton href="/dashboard/facilities" variant="secondary">
+            Browse facilities
+          </LinkButton>
+        }
+      />
 
       {bookings.length === 0 ? (
-        <p>No bookings yet.</p>
+        <EmptyState title="No bookings yet" />
       ) : (
-        <ul>
+        <div className="flex flex-col gap-4">
           {bookings.map((booking) => {
             const canCancel =
               (booking.status === "PENDING" || booking.status === "APPROVED") &&
               (isAdmin || booking.requestedById === user.id);
 
             return (
-              <li key={booking.id} style={{ marginBottom: 16 }}>
-                <strong>{booking.facility.name}</strong> ({booking.facility.building.name}) — Unit{" "}
-                {booking.unit.unitNumber}
-                <br />
-                {formatRange(booking.startsAt, booking.endsAt)} · {booking.status}
-                {isAdmin ? ` · requested by ${booking.requestedBy.name}` : ""}
-                {booking.notes ? (
-                  <>
-                    <br />
-                    Note: {booking.notes}
-                  </>
+              <Card key={booking.id}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-slate-900">
+                      {booking.facility.name} ({booking.facility.building.name})
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      Unit {booking.unit.unitNumber} · {formatRange(booking.startsAt, booking.endsAt)}
+                      {isAdmin ? ` · requested by ${booking.requestedBy.name}` : ""}
+                    </p>
+                  </div>
+                  <StatusBadge status={booking.status} />
+                </div>
+
+                {booking.notes ? <p className="mt-2 text-sm text-slate-600">Note: {booking.notes}</p> : null}
+
+                {isAdmin && booking.status === "PENDING" ? (
+                  <div className="mt-3">
+                    <DecisionForms bookingId={booking.id} />
+                  </div>
                 ) : null}
-                <br />
-                {isAdmin && booking.status === "PENDING" ? <DecisionForms bookingId={booking.id} /> : null}
                 {canCancel ? (
-                  <form action={cancelBooking.bind(null, booking.id)} style={{ display: "inline" }}>
-                    <button type="submit">Cancel</button>
+                  <form action={cancelBooking.bind(null, booking.id)} className="mt-3">
+                    <Button type="submit" variant="danger" size="sm">
+                      Cancel
+                    </Button>
                   </form>
                 ) : null}
-              </li>
+              </Card>
             );
           })}
-        </ul>
+        </div>
       )}
     </div>
   );

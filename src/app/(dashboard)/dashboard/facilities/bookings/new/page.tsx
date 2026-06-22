@@ -1,6 +1,7 @@
 import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { BookingForm } from "./booking-form";
+import { PageHeader } from "@/components/ui";
 
 export default async function NewBookingPage({
   searchParams,
@@ -25,15 +26,17 @@ export default async function NewBookingPage({
   if (unitLinks.length === 0) {
     return (
       <div>
-        <h1>Request a booking</h1>
-        <p>You need to be linked to a unit before you can book a facility. Contact your building admin.</p>
+        <PageHeader title="Request a booking" />
+        <p className="text-sm text-slate-500">
+          You need to be linked to a unit before you can book a facility. Contact your building admin.
+        </p>
       </div>
     );
   }
 
   return (
     <div>
-      <h1>Request a booking</h1>
+      <PageHeader title="Request a booking" />
       <BookingForm
         facilities={facilities.map((facility) => ({
           id: facility.id,

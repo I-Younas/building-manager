@@ -1,6 +1,7 @@
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { InvoiceForm } from "./invoice-form";
+import { PageHeader } from "@/components/ui";
 
 export default async function NewInvoicePage() {
   const { organizationId } = await requireAdminOrStaff();
@@ -13,7 +14,7 @@ export default async function NewInvoicePage() {
 
   return (
     <div>
-      <h1>Create invoice</h1>
+      <PageHeader title="Create invoice" />
       <InvoiceForm
         units={units.map((unit) => ({
           id: unit.id,

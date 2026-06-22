@@ -3,6 +3,7 @@ import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { updateFacility } from "@/lib/actions/facilities";
 import { FacilityForm } from "../../facility-form";
+import { PageHeader } from "@/components/ui";
 
 export default async function EditFacilityPage({
   params,
@@ -19,7 +20,7 @@ export default async function EditFacilityPage({
 
   return (
     <div>
-      <h1>Edit facility</h1>
+      <PageHeader title="Edit facility" />
       <FacilityForm
         action={updateFacility.bind(null, facilityId)}
         buildings={buildings}

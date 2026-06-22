@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import type { FormActionState } from "@/lib/actions/facilities";
+import { Button, checkboxClasses, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
 type Action = (state: FormActionState, formData: FormData) => Promise<FormActionState>;
 type Building = { id: string; name: string };
@@ -29,10 +30,10 @@ export function FacilityForm({
   const [state, formAction, pending] = useActionState(action, undefined);
 
   return (
-    <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 480 }}>
-      <label>
+    <form action={formAction} className={`${formStackClasses} max-w-lg`}>
+      <label className={labelClasses}>
         Building
-        <select name="buildingId" required defaultValue={defaultValues?.buildingId ?? ""}>
+        <select name="buildingId" required defaultValue={defaultValues?.buildingId ?? ""} className={inputClasses}>
           <option value="" disabled>
             Select a building
           </option>
@@ -44,32 +45,55 @@ export function FacilityForm({
         </select>
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Name
-        <input name="name" required maxLength={200} defaultValue={defaultValues?.name} />
+        <input name="name" required maxLength={200} defaultValue={defaultValues?.name} className={inputClasses} />
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Description (optional)
-        <textarea name="description" maxLength={2000} rows={3} defaultValue={defaultValues?.description ?? ""} />
+        <textarea
+          name="description"
+          maxLength={2000}
+          rows={3}
+          defaultValue={defaultValues?.description ?? ""}
+          className={inputClasses}
+        />
       </label>
 
-      <label>
-        <input type="checkbox" name="requiresApproval" defaultChecked={defaultValues?.requiresApproval ?? true} />{" "}
+      <label className="flex items-center gap-2 text-sm text-slate-700">
+        <input
+          type="checkbox"
+          name="requiresApproval"
+          defaultChecked={defaultValues?.requiresApproval ?? true}
+          className={checkboxClasses}
+        />
         Requires admin approval
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Opening time
-        <input type="time" name="openTime" required defaultValue={defaultValues?.openTime ?? "08:00"} />
+        <input
+          type="time"
+          name="openTime"
+          required
+          defaultValue={defaultValues?.openTime ?? "08:00"}
+          className={inputClasses}
+        />
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Closing time
-        <input type="time" name="closeTime" required defaultValue={defaultValues?.closeTime ?? "22:00"} />
+        <input
+          type="time"
+          name="closeTime"
+          required
+          defaultValue={defaultValues?.closeTime ?? "22:00"}
+          className={inputClasses}
+        />
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Minimum notice (hours)
         <input
           type="number"
@@ -78,10 +102,11 @@ export function FacilityForm({
           min={0}
           max={720}
           defaultValue={defaultValues?.minNoticeHours ?? 24}
+          className={inputClasses}
         />
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Maximum booking duration (minutes)
         <input
           type="number"
@@ -90,14 +115,15 @@ export function FacilityForm({
           min={15}
           max={1440}
           defaultValue={defaultValues?.maxDurationMinutes ?? 120}
+          className={inputClasses}
         />
       </label>
 
-      {state?.error ? <p role="alert">{state.error}</p> : null}
+      {state?.error ? <ErrorText>{state.error}</ErrorText> : null}
 
-      <button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Saving..." : submitLabel}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -1,6 +1,7 @@
 import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
+import { Card, EmptyState, PageHeader } from "@/components/ui";
 
 export default async function DashboardPage() {
   const { user, organizationId, role } = await requireOrgScope();
@@ -58,45 +59,45 @@ export default async function DashboardPage() {
     prisma.invoice.count({ where: invoiceWhere }),
   ]);
 
+  const stats = [
+    { label: isAdmin ? "Open tickets" : "My open tickets", value: openTicketCount },
+    { label: isAdmin ? "Pending bookings" : "My pending bookings", value: pendingBookingCount },
+    { label: isAdmin ? "Outstanding invoices" : "My outstanding invoices", value: openInvoiceCount },
+  ];
+
   return (
     <div>
-      <h1>Welcome, {user.name}</h1>
-      <p>Role: {role}</p>
+      <PageHeader title={`Welcome, ${user.name}`} description={`Role: ${role.replace("_", " ")}`} />
 
-      <div style={{ display: "flex", gap: 24, margin: "16px 0" }}>
-        <div>
-          <strong>{openTicketCount}</strong>
-          <br />
-          {isAdmin ? "Open tickets" : "My open tickets"}
-        </div>
-        <div>
-          <strong>{pendingBookingCount}</strong>
-          <br />
-          {isAdmin ? "Pending bookings" : "My pending bookings"}
-        </div>
-        <div>
-          <strong>{openInvoiceCount}</strong>
-          <br />
-          {isAdmin ? "Outstanding invoices" : "My outstanding invoices"}
-        </div>
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {stats.map((stat) => (
+          <Card key={stat.label}>
+            <p className="text-3xl font-semibold text-slate-900">{stat.value}</p>
+            <p className="mt-1 text-sm text-slate-500">{stat.label}</p>
+          </Card>
+        ))}
       </div>
 
-      <h2>Announcements</h2>
+      <h2 className="mb-3 text-lg font-semibold text-slate-900">Announcements</h2>
       {announcements.length === 0 ? (
-        <p>No announcements yet.</p>
+        <EmptyState title="No announcements yet" />
       ) : (
-        <ul>
+        <div className="flex flex-col gap-4">
           {announcements.map((announcement) => (
-            <li key={announcement.id} style={{ marginBottom: 12 }}>
-              <strong>{announcement.title}</strong> —{" "}
-              {announcement.scope === "BUILDING" ? announcement.building?.name : "All buildings"}
-              <br />
-              <span style={{ whiteSpace: "pre-wrap" }}>{announcement.body}</span>
-              <br />
-              Posted {announcement.publishedAt.toLocaleDateString()}
-            </li>
+            <Card key={announcement.id}>
+              <div className="flex items-baseline justify-between gap-4">
+                <p className="font-medium text-slate-900">{announcement.title}</p>
+                <p className="text-xs text-slate-500">
+                  {announcement.scope === "BUILDING" ? announcement.building?.name : "All buildings"}
+                </p>
+              </div>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{announcement.body}</p>
+              <p className="mt-3 text-xs text-slate-400">
+                Posted {announcement.publishedAt.toLocaleDateString()}
+              </p>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

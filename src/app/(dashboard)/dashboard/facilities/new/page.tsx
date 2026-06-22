@@ -2,6 +2,7 @@ import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { createFacility } from "@/lib/actions/facilities";
 import { FacilityForm } from "../facility-form";
+import { PageHeader } from "@/components/ui";
 
 export default async function NewFacilityPage() {
   const { organizationId } = await requireAdminOrStaff();
@@ -9,7 +10,7 @@ export default async function NewFacilityPage() {
 
   return (
     <div>
-      <h1>Add facility</h1>
+      <PageHeader title="Add facility" />
       <FacilityForm action={createFacility} buildings={buildings} submitLabel="Create facility" />
     </div>
   );

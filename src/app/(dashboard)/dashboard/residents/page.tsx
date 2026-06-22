@@ -1,6 +1,16 @@
-import Link from "next/link";
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
+import {
+  EmptyState,
+  LinkButton,
+  PageHeader,
+  tableClasses,
+  tableWrapClasses,
+  tdClasses,
+  thClasses,
+  theadClasses,
+  trClasses,
+} from "@/components/ui";
 
 export default async function ResidentsPage() {
   const { organizationId } = await requireAdminOrStaff();
@@ -19,30 +29,41 @@ export default async function ResidentsPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h1>Residents</h1>
-        <Link href="/dashboard/residents/invite">Invite resident</Link>
-      </div>
+      <PageHeader title="Residents" actions={<LinkButton href="/dashboard/residents/invite">Invite resident</LinkButton>} />
 
       {memberships.length === 0 ? (
-        <p>No residents yet.</p>
+        <EmptyState title="No residents yet" />
       ) : (
-        <ul>
-          {memberships.map((membership) => {
-            const units = membership.user.unitMemberships.filter(
-              (link) => link.unit.organizationId === organizationId,
-            );
+        <div className={tableWrapClasses}>
+          <table className={tableClasses}>
+            <thead className={theadClasses}>
+              <tr>
+                <th className={thClasses}>Name</th>
+                <th className={thClasses}>Email</th>
+                <th className={thClasses}>Unit</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {memberships.map((membership) => {
+                const units = membership.user.unitMemberships.filter(
+                  (link) => link.unit.organizationId === organizationId,
+                );
 
-            return (
-              <li key={membership.id}>
-                {membership.user.name} ({membership.user.email}) —{" "}
-                {units.length > 0
-                  ? units.map((link) => `${link.unit.building.name} / Unit ${link.unit.unitNumber}`).join(", ")
-                  : "no unit linked"}
-              </li>
-            );
-          })}
-        </ul>
+                return (
+                  <tr key={membership.id} className={trClasses}>
+                    <td className={`${tdClasses} font-medium text-slate-900`}>{membership.user.name}</td>
+                    <td className={tdClasses}>{membership.user.email}</td>
+                    <td className={tdClasses}>
+                      {units.length > 0
+                        ? units.map((link) => `${link.unit.building.name} / Unit ${link.unit.unitNumber}`).join(", ")
+                        : "no unit linked"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { createInvoice } from "@/lib/actions/invoices";
+import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
 type Unit = { id: string; unitNumber: string; buildingName: string };
 
@@ -20,10 +21,10 @@ export function InvoiceForm({ units }: { units: Unit[] }) {
   }
 
   return (
-    <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 560 }}>
-      <label>
+    <form action={formAction} className={`${formStackClasses} max-w-2xl`}>
+      <label className={labelClasses}>
         Unit
-        <select name="unitId" required defaultValue="">
+        <select name="unitId" required defaultValue="" className={inputClasses}>
           <option value="" disabled>
             Select a unit
           </option>
@@ -35,33 +36,44 @@ export function InvoiceForm({ units }: { units: Unit[] }) {
         </select>
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Due date
-        <input type="date" name="dueDate" required />
+        <input type="date" name="dueDate" required className={inputClasses} />
       </label>
 
-      <fieldset style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <legend>Line items</legend>
+      <fieldset className="flex flex-col gap-2 rounded-md border border-slate-200 p-4">
+        <legend className="px-1 text-sm font-medium text-slate-700">Line items</legend>
         {rowIds.map((id) => (
-          <div key={id} style={{ display: "flex", gap: 8 }}>
-            <input name="description" placeholder="Description" style={{ flex: 2 }} />
-            <input name="amount" placeholder="Amount (e.g. 25.00)" inputMode="decimal" style={{ flex: 1 }} />
-            <input name="quantity" placeholder="Qty" defaultValue="1" inputMode="numeric" style={{ width: 60 }} />
-            <button type="button" onClick={() => removeRow(id)}>
+          <div key={id} className="flex gap-2">
+            <input name="description" placeholder="Description" className={`${inputClasses} mt-0 flex-[2]`} />
+            <input
+              name="amount"
+              placeholder="Amount (e.g. 25.00)"
+              inputMode="decimal"
+              className={`${inputClasses} mt-0 flex-1`}
+            />
+            <input
+              name="quantity"
+              placeholder="Qty"
+              defaultValue="1"
+              inputMode="numeric"
+              className={`${inputClasses} mt-0 w-16`}
+            />
+            <Button type="button" variant="secondary" size="sm" onClick={() => removeRow(id)}>
               Remove
-            </button>
+            </Button>
           </div>
         ))}
-        <button type="button" onClick={addRow}>
+        <Button type="button" variant="secondary" size="sm" className="self-start" onClick={addRow}>
           Add line item
-        </button>
+        </Button>
       </fieldset>
 
-      {state?.error ? <p role="alert">{state.error}</p> : null}
+      {state?.error ? <ErrorText>{state.error}</ErrorText> : null}
 
-      <button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Creating..." : "Create invoice (draft)"}
-      </button>
+      </Button>
     </form>
   );
 }

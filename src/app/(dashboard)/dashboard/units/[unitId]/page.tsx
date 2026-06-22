@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { removeUnitResident } from "@/lib/actions/units";
+import { Button, Card, EmptyState, LinkButton, PageHeader } from "@/components/ui";
 
 export default async function UnitDetailPage({
   params,
@@ -24,32 +25,38 @@ export default async function UnitDetailPage({
 
   return (
     <div>
-      <p>
-        <Link href={`/dashboard/buildings/${unit.buildingId}`}>{unit.building.name}</Link>
-      </p>
-      <h1>Unit {unit.unitNumber}</h1>
-      {unit.floor ? <p>Floor {unit.floor}</p> : null}
+      <Link href={`/dashboard/buildings/${unit.buildingId}`} className="text-sm text-blue-600 hover:underline">
+        ← {unit.building.name}
+      </Link>
+      <PageHeader
+        title={`Unit ${unit.unitNumber}`}
+        description={unit.floor ? `Floor ${unit.floor}` : undefined}
+        actions={<LinkButton href={`/dashboard/residents/invite?unitId=${unit.id}`}>Invite a resident</LinkButton>}
+      />
 
-      <h2>Residents</h2>
+      <h2 className="mb-3 text-lg font-semibold text-slate-900">Residents</h2>
       {unit.residentLinks.length === 0 ? (
-        <p>No residents linked to this unit yet.</p>
+        <EmptyState title="No residents linked to this unit yet" />
       ) : (
-        <ul>
+        <div className="flex flex-col gap-3">
           {unit.residentLinks.map((link) => (
-            <li key={link.id}>
-              {link.user.name} ({link.user.email}) — {link.relationship}
-              {link.isPrimary ? " · primary" : ""}{" "}
-              <form action={removeUnitResident.bind(null, link.id)} style={{ display: "inline" }}>
-                <button type="submit">Remove</button>
+            <Card key={link.id} className="flex items-center justify-between py-4">
+              <div>
+                <p className="font-medium text-slate-900">{link.user.name}</p>
+                <p className="text-sm text-slate-500">
+                  {link.user.email} · {link.relationship.replace("_", " ")}
+                  {link.isPrimary ? " · primary" : ""}
+                </p>
+              </div>
+              <form action={removeUnitResident.bind(null, link.id)}>
+                <Button type="submit" variant="danger" size="sm">
+                  Remove
+                </Button>
               </form>
-            </li>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
-
-      <p>
-        <Link href={`/dashboard/residents/invite?unitId=${unit.id}`}>Invite a resident for this unit</Link>
-      </p>
     </div>
   );
 }

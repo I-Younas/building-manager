@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { StatusForm } from "./status-form";
 import { AssignForm } from "./assign-form";
 import { CommentForm } from "./comment-form";
+import { Card, PageHeader, StatusBadge } from "@/components/ui";
 
 export default async function TicketDetailPage({
   params,
@@ -54,38 +55,47 @@ export default async function TicketDetailPage({
 
   return (
     <div>
-      <p>
-        {isStaffOrAdmin ? (
-          <Link href={`/dashboard/units/${ticket.unitId}`}>
-            {ticket.unit.building.name} / Unit {ticket.unit.unitNumber}
-          </Link>
-        ) : (
+      {isStaffOrAdmin ? (
+        <Link href={`/dashboard/units/${ticket.unitId}`} className="text-sm text-blue-600 hover:underline">
+          {ticket.unit.building.name} / Unit {ticket.unit.unitNumber}
+        </Link>
+      ) : (
+        <p className="text-sm text-slate-500">
+          {ticket.unit.building.name} / Unit {ticket.unit.unitNumber}
+        </p>
+      )}
+
+      <PageHeader
+        title={ticket.title}
+        description={`Reported by ${ticket.reportedBy.name}${ticket.assignedTo ? ` · Assigned to ${ticket.assignedTo.name}` : ""}`}
+        actions={
           <>
-            {ticket.unit.building.name} / Unit {ticket.unit.unitNumber}
+            <StatusBadge status={ticket.status} />
+            <StatusBadge status={ticket.priority} />
+            {ticket.category ? <StatusBadge status={ticket.category} /> : null}
           </>
-        )}
-      </p>
-      <h1>{ticket.title}</h1>
-      <p>
-        Status: {ticket.status} · Priority: {ticket.priority}
-        {ticket.category ? ` · Category: ${ticket.category}` : ""}
-      </p>
-      <p>Reported by {ticket.reportedBy.name}</p>
-      {ticket.assignedTo ? <p>Assigned to {ticket.assignedTo.name}</p> : null}
-      <p style={{ whiteSpace: "pre-wrap" }}>{ticket.description}</p>
+        }
+      />
+
+      <Card className="mb-8">
+        <p className="whitespace-pre-wrap text-sm text-slate-700">{ticket.description}</p>
+      </Card>
 
       {isStaffOrAdmin ? (
-        <>
-          <h2>Update status</h2>
-          <StatusForm ticketId={ticket.id} currentStatus={ticket.status} />
-
-          <h2>Assign</h2>
-          <AssignForm ticketId={ticket.id} staff={staffOptions} currentAssigneeId={ticket.assignedToId} />
-        </>
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Card>
+            <h2 className="mb-3 text-sm font-semibold text-slate-900">Update status</h2>
+            <StatusForm ticketId={ticket.id} currentStatus={ticket.status} />
+          </Card>
+          <Card>
+            <h2 className="mb-3 text-sm font-semibold text-slate-900">Assign</h2>
+            <AssignForm ticketId={ticket.id} staff={staffOptions} currentAssigneeId={ticket.assignedToId} />
+          </Card>
+        </div>
       ) : null}
 
-      <h2>Status history</h2>
-      <ul>
+      <h2 className="mb-3 text-lg font-semibold text-slate-900">Status history</h2>
+      <ul className="mb-8 flex flex-col gap-2 text-sm text-slate-600">
         {ticket.statusHistory.map((entry) => (
           <li key={entry.id}>
             {entry.fromStatus ? `${entry.fromStatus} → ${entry.toStatus}` : entry.toStatus} by{" "}
@@ -95,18 +105,20 @@ export default async function TicketDetailPage({
         ))}
       </ul>
 
-      <h2>Comments</h2>
+      <h2 className="mb-3 text-lg font-semibold text-slate-900">Comments</h2>
       {visibleComments.length === 0 ? (
-        <p>No comments yet.</p>
+        <p className="mb-4 text-sm text-slate-500">No comments yet.</p>
       ) : (
-        <ul>
+        <div className="mb-4 flex flex-col gap-3">
           {visibleComments.map((comment) => (
-            <li key={comment.id}>
-              <strong>{comment.author.name}</strong>
-              {comment.isInternal ? " (internal)" : ""}: {comment.body}
-            </li>
+            <Card key={comment.id} className="py-3">
+              <p className="text-sm text-slate-700">
+                <span className="font-medium text-slate-900">{comment.author.name}</span>
+                {comment.isInternal ? " (internal)" : ""}: {comment.body}
+              </p>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
       <CommentForm ticketId={ticket.id} canMarkInternal={isStaffOrAdmin} />
     </div>

@@ -21,20 +21,24 @@ export default async function InvitePage({
   if (isExpired) {
     return (
       <div>
-        <h1>Invite no longer valid</h1>
-        <p>This invite link has already been used or has expired. Ask your building admin for a new one.</p>
+        <h1 className="text-xl font-semibold text-slate-900">Invite no longer valid</h1>
+        <p className="mt-2 text-sm text-slate-500">
+          This invite link has already been used or has expired. Ask your building admin for a new one.
+        </p>
       </div>
     );
   }
 
   return (
     <div>
-      <h1>Join {invite.organization.name}</h1>
-      <p>
+      <h1 className="text-xl font-semibold text-slate-900">Join {invite.organization.name}</h1>
+      <p className="mt-2 text-sm text-slate-500">
         You&apos;ve been invited as {invite.role === "RESIDENT" ? "a resident" : "staff"}
         {invite.unit ? ` of Unit ${invite.unit.unitNumber}, ${invite.unit.building.name}` : ""}.
       </p>
-      <RedeemInviteForm code={code} lockedEmail={invite.email} />
+      <div className="mt-6">
+        <RedeemInviteForm code={code} lockedEmail={invite.email} />
+      </div>
     </div>
   );
 }

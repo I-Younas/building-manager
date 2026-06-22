@@ -3,42 +3,46 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { signupOrgAdmin } from "@/lib/actions/auth";
+import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
 export function SignupForm() {
   const [state, formAction, pending] = useActionState(signupOrgAdmin, undefined);
 
   return (
-    <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <h1>Create your organization</h1>
+    <form action={formAction} className={formStackClasses}>
+      <h1 className="text-xl font-semibold text-slate-900">Create your organization</h1>
 
-      <label>
+      <label className={labelClasses}>
         Organization name
-        <input name="organizationName" required minLength={2} maxLength={100} />
+        <input name="organizationName" required minLength={2} maxLength={100} className={inputClasses} />
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Your name
-        <input name="name" required maxLength={100} />
+        <input name="name" required maxLength={100} className={inputClasses} />
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Email
-        <input name="email" type="email" required />
+        <input name="email" type="email" required className={inputClasses} />
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Password
-        <input name="password" type="password" required minLength={8} />
+        <input name="password" type="password" required minLength={8} className={inputClasses} />
       </label>
 
-      {state?.error ? <p role="alert">{state.error}</p> : null}
+      {state?.error ? <ErrorText>{state.error}</ErrorText> : null}
 
-      <button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending}>
         {pending ? "Creating..." : "Create organization"}
-      </button>
+      </Button>
 
-      <p>
-        Already have an account? <Link href="/login">Log in</Link>
+      <p className="text-sm text-slate-500">
+        Already have an account?{" "}
+        <Link href="/login" className="font-medium text-blue-600 hover:underline">
+          Log in
+        </Link>
       </p>
     </form>
   );

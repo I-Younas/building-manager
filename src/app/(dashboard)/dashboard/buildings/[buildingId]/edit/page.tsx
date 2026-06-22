@@ -3,6 +3,7 @@ import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { updateBuilding } from "@/lib/actions/buildings";
 import { BuildingForm } from "../../building-form";
+import { PageHeader } from "@/components/ui";
 
 export default async function EditBuildingPage({
   params,
@@ -17,7 +18,7 @@ export default async function EditBuildingPage({
 
   return (
     <div>
-      <h1>Edit building</h1>
+      <PageHeader title="Edit building" />
       <BuildingForm
         action={updateBuilding.bind(null, buildingId)}
         defaultValues={building}

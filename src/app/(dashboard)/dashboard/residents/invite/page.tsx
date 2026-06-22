@@ -1,6 +1,7 @@
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { InviteForm } from "./invite-form";
+import { Card, PageHeader } from "@/components/ui";
 
 export default async function InviteResidentPage({
   searchParams,
@@ -18,15 +19,17 @@ export default async function InviteResidentPage({
 
   return (
     <div>
-      <h1>Invite a member</h1>
-      <InviteForm
-        units={units.map((unit) => ({
-          id: unit.id,
-          unitNumber: unit.unitNumber,
-          buildingName: unit.building.name,
-        }))}
-        defaultUnitId={unitId}
-      />
+      <PageHeader title="Invite a member" />
+      <Card className="max-w-lg">
+        <InviteForm
+          units={units.map((unit) => ({
+            id: unit.id,
+            unitNumber: unit.unitNumber,
+            buildingName: unit.building.name,
+          }))}
+          defaultUnitId={unitId}
+        />
+      </Card>
     </div>
   );
 }

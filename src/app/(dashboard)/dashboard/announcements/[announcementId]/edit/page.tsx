@@ -3,6 +3,7 @@ import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { updateAnnouncement } from "@/lib/actions/announcements";
 import { AnnouncementForm } from "../../announcement-form";
+import { PageHeader } from "@/components/ui";
 
 export default async function EditAnnouncementPage({
   params,
@@ -21,7 +22,7 @@ export default async function EditAnnouncementPage({
 
   return (
     <div>
-      <h1>Edit announcement</h1>
+      <PageHeader title="Edit announcement" />
       <AnnouncementForm
         action={updateAnnouncement.bind(null, announcementId)}
         buildings={buildings}

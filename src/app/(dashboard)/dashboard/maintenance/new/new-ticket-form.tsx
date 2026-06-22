@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { createTicket } from "@/lib/actions/maintenance";
+import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
 type Unit = { id: string; unitNumber: string; buildingName: string };
 
@@ -9,10 +10,10 @@ export function NewTicketForm({ units }: { units: Unit[] }) {
   const [state, formAction, pending] = useActionState(createTicket, undefined);
 
   return (
-    <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 480 }}>
-      <label>
+    <form action={formAction} className={`${formStackClasses} max-w-lg`}>
+      <label className={labelClasses}>
         Unit
-        <select name="unitId" required defaultValue={units.length === 1 ? units[0].id : ""}>
+        <select name="unitId" required defaultValue={units.length === 1 ? units[0].id : ""} className={inputClasses}>
           <option value="" disabled>
             Select a unit
           </option>
@@ -24,24 +25,24 @@ export function NewTicketForm({ units }: { units: Unit[] }) {
         </select>
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Title
-        <input name="title" required maxLength={200} />
+        <input name="title" required maxLength={200} className={inputClasses} />
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Description
-        <textarea name="description" required maxLength={5000} rows={5} />
+        <textarea name="description" required maxLength={5000} rows={5} className={inputClasses} />
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Category (optional)
-        <input name="category" maxLength={100} placeholder="e.g. Plumbing" />
+        <input name="category" maxLength={100} placeholder="e.g. Plumbing" className={inputClasses} />
       </label>
 
-      <label>
+      <label className={labelClasses}>
         Priority
-        <select name="priority" defaultValue="MEDIUM">
+        <select name="priority" defaultValue="MEDIUM" className={inputClasses}>
           <option value="LOW">Low</option>
           <option value="MEDIUM">Medium</option>
           <option value="HIGH">High</option>
@@ -49,11 +50,11 @@ export function NewTicketForm({ units }: { units: Unit[] }) {
         </select>
       </label>
 
-      {state?.error ? <p role="alert">{state.error}</p> : null}
+      {state?.error ? <ErrorText>{state.error}</ErrorText> : null}
 
-      <button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Submitting..." : "Submit"}
-      </button>
+      </Button>
     </form>
   );
 }

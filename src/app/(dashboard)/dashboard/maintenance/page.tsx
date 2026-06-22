@@ -1,6 +1,18 @@
 import Link from "next/link";
 import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
+import {
+  EmptyState,
+  LinkButton,
+  PageHeader,
+  StatusBadge,
+  tableClasses,
+  tableWrapClasses,
+  tdClasses,
+  thClasses,
+  theadClasses,
+  trClasses,
+} from "@/components/ui";
 
 const STATUS_FILTERS = ["OPEN", "IN_PROGRESS", "ON_HOLD", "RESOLVED", "CLOSED"] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -38,34 +50,69 @@ export default async function MaintenancePage({
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h1>Maintenance</h1>
-        <Link href="/dashboard/maintenance/new">Report an issue</Link>
-      </div>
+      <PageHeader title="Maintenance" actions={<LinkButton href="/dashboard/maintenance/new">Report an issue</LinkButton>} />
 
       {role !== "RESIDENT" ? (
-        <nav style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <Link href="/dashboard/maintenance">All</Link>
+        <nav className="mb-4 flex flex-wrap gap-2">
+          <Link
+            href="/dashboard/maintenance"
+            className={`rounded-full px-3 py-1 text-sm font-medium ${
+              !status ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            All
+          </Link>
           {STATUS_FILTERS.map((s) => (
-            <Link key={s} href={`/dashboard/maintenance?status=${s}`}>
-              {s}
+            <Link
+              key={s}
+              href={`/dashboard/maintenance?status=${s}`}
+              className={`rounded-full px-3 py-1 text-sm font-medium ${
+                status === s ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {s.replace("_", " ")}
             </Link>
           ))}
         </nav>
       ) : null}
 
       {tickets.length === 0 ? (
-        <p>No tickets yet.</p>
+        <EmptyState title="No tickets yet" />
       ) : (
-        <ul>
-          {tickets.map((ticket) => (
-            <li key={ticket.id}>
-              <Link href={`/dashboard/maintenance/${ticket.id}`}>{ticket.title}</Link> — {ticket.status} ·{" "}
-              {ticket.priority} · {ticket.unit.building.name} / Unit {ticket.unit.unitNumber}
-              {ticket.assignedTo ? ` · assigned to ${ticket.assignedTo.name}` : ""}
-            </li>
-          ))}
-        </ul>
+        <div className={tableWrapClasses}>
+          <table className={tableClasses}>
+            <thead className={theadClasses}>
+              <tr>
+                <th className={thClasses}>Title</th>
+                <th className={thClasses}>Status</th>
+                <th className={thClasses}>Priority</th>
+                <th className={thClasses}>Unit</th>
+                <th className={thClasses}>Assigned to</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {tickets.map((ticket) => (
+                <tr key={ticket.id} className={trClasses}>
+                  <td className={tdClasses}>
+                    <Link href={`/dashboard/maintenance/${ticket.id}`} className="font-medium text-blue-600 hover:underline">
+                      {ticket.title}
+                    </Link>
+                  </td>
+                  <td className={tdClasses}>
+                    <StatusBadge status={ticket.status} />
+                  </td>
+                  <td className={tdClasses}>
+                    <StatusBadge status={ticket.priority} />
+                  </td>
+                  <td className={tdClasses}>
+                    {ticket.unit.building.name} / Unit {ticket.unit.unitNumber}
+                  </td>
+                  <td className={tdClasses}>{ticket.assignedTo ? ticket.assignedTo.name : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

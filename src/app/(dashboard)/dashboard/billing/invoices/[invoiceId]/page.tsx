@@ -5,6 +5,17 @@ import { formatCents } from "@/lib/money";
 import { getDisplayStatus } from "@/lib/invoice-status";
 import { issueInvoice, voidInvoice } from "@/lib/actions/invoices";
 import { PaymentForm } from "./payment-form";
+import {
+  Button,
+  Card,
+  PageHeader,
+  StatusBadge,
+  tableClasses,
+  tableWrapClasses,
+  tdClasses,
+  thClasses,
+  theadClasses,
+} from "@/components/ui";
 
 export default async function InvoiceDetailPage({
   params,
@@ -40,74 +51,82 @@ export default async function InvoiceDetailPage({
 
   return (
     <div>
-      <p>
-        {invoice.unit.building.name} / Unit {invoice.unit.unitNumber}
-      </p>
-      <h1>{invoice.invoiceNumber}</h1>
-      <p>
-        Status: {getDisplayStatus(invoice)} · Due {invoice.dueDate.toLocaleDateString()}
-      </p>
+      <PageHeader
+        title={invoice.invoiceNumber}
+        description={`${invoice.unit.building.name} / Unit ${invoice.unit.unitNumber} · Due ${invoice.dueDate.toLocaleDateString()}`}
+        actions={
+          <>
+            <StatusBadge status={getDisplayStatus(invoice)} />
+            {isAdmin && invoice.status === "DRAFT" ? (
+              <form action={issueInvoice.bind(null, invoice.id)}>
+                <Button type="submit" size="sm">
+                  Issue invoice
+                </Button>
+              </form>
+            ) : null}
+            {isAdmin && (invoice.status === "DRAFT" || invoice.status === "ISSUED") && invoice.payments.length === 0 ? (
+              <form action={voidInvoice.bind(null, invoice.id)}>
+                <Button type="submit" variant="danger" size="sm">
+                  Void invoice
+                </Button>
+              </form>
+            ) : null}
+          </>
+        }
+      />
 
-      <h2>Line items</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Description</th>
-            <th>Qty</th>
-            <th>Amount</th>
-            <th>Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoice.lineItems.map((item) => (
-            <tr key={item.id}>
-              <td>{item.description}</td>
-              <td>{item.quantity}</td>
-              <td>{formatCents(item.amountCents)}</td>
-              <td>{formatCents(item.amountCents * item.quantity)}</td>
+      <h2 className="mb-3 text-lg font-semibold text-slate-900">Line items</h2>
+      <div className={`${tableWrapClasses} mb-6`}>
+        <table className={tableClasses}>
+          <thead className={theadClasses}>
+            <tr>
+              <th className={thClasses}>Description</th>
+              <th className={thClasses}>Qty</th>
+              <th className={thClasses}>Amount</th>
+              <th className={thClasses}>Subtotal</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <p>
-        <strong>Total: {formatCents(totalCents)}</strong>
-      </p>
-      <p>
-        Paid: {formatCents(paidCents)} · Balance: {formatCents(balanceCents)}
-      </p>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {invoice.lineItems.map((item) => (
+              <tr key={item.id}>
+                <td className={tdClasses}>{item.description}</td>
+                <td className={tdClasses}>{item.quantity}</td>
+                <td className={tdClasses}>{formatCents(item.amountCents)}</td>
+                <td className={tdClasses}>{formatCents(item.amountCents * item.quantity)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      {isAdmin && invoice.status === "DRAFT" ? (
-        <form action={issueInvoice.bind(null, invoice.id)}>
-          <button type="submit">Issue invoice</button>
-        </form>
-      ) : null}
+      <Card className="mb-8 max-w-sm">
+        <p className="text-lg font-semibold text-slate-900">Total: {formatCents(totalCents)}</p>
+        <p className="mt-1 text-sm text-slate-500">
+          Paid: {formatCents(paidCents)} · Balance: {formatCents(balanceCents)}
+        </p>
+      </Card>
 
-      {isAdmin &&
-      (invoice.status === "DRAFT" || invoice.status === "ISSUED") &&
-      invoice.payments.length === 0 ? (
-        <form action={voidInvoice.bind(null, invoice.id)}>
-          <button type="submit">Void invoice</button>
-        </form>
-      ) : null}
-
-      <h2>Payments</h2>
+      <h2 className="mb-3 text-lg font-semibold text-slate-900">Payments</h2>
       {invoice.payments.length === 0 ? (
-        <p>No payments recorded yet.</p>
+        <p className="mb-6 text-sm text-slate-500">No payments recorded yet.</p>
       ) : (
-        <ul>
+        <div className="mb-6 flex flex-col gap-2">
           {invoice.payments.map((payment) => (
-            <li key={payment.id}>
-              {formatCents(payment.amountCents)} via {payment.method} on {payment.paidAt.toLocaleDateString()}
-              {payment.reference ? ` (ref: ${payment.reference})` : ""}
-              {isAdmin ? ` · recorded by ${payment.recordedBy.name}` : ""}
-            </li>
+            <Card key={payment.id} className="py-3">
+              <p className="text-sm text-slate-700">
+                {formatCents(payment.amountCents)} via {payment.method.replace("_", " ")} on{" "}
+                {payment.paidAt.toLocaleDateString()}
+                {payment.reference ? ` (ref: ${payment.reference})` : ""}
+                {isAdmin ? ` · recorded by ${payment.recordedBy.name}` : ""}
+              </p>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
 
       {isAdmin && invoice.status !== "DRAFT" && invoice.status !== "VOID" && invoice.status !== "PAID" ? (
         <>
-          <h2>Record a payment</h2>
+          <h2 className="mb-3 text-lg font-semibold text-slate-900">Record a payment</h2>
           <PaymentForm invoiceId={invoice.id} />
         </>
       ) : null}
