@@ -34,6 +34,12 @@ export async function requireUser() {
   return session.user;
 }
 
+// A user can hold more than one role in the same organization (e.g. an
+// ORG_ADMIN who is also a RESIDENT of a unit there, set up for testing).
+// When that's the case, a session's chosen activeRole picks which one is in
+// effect; absent a choice, the most-privileged role wins.
+const ROLE_PRIORITY = { ORG_ADMIN: 0, STAFF: 1, RESIDENT: 2 } as const;
+
 // The org-scoping primitive every module's data access builds on. Every
 // server action and org-scoped query must go through this rather than
 // trusting an organizationId passed in from the client.
@@ -42,18 +48,21 @@ export const requireOrgScope = cache(async () => {
   if (!session) redirect("/login");
   if (!session.activeOrganizationId) redirect("/login");
 
-  const membership = await prisma.orgMembership.findUnique({
-    where: {
-      userId_organizationId: {
-        userId: session.userId,
-        organizationId: session.activeOrganizationId,
-      },
-    },
+  const memberships = await prisma.orgMembership.findMany({
+    where: { userId: session.userId, organizationId: session.activeOrganizationId },
   });
+  if (memberships.length === 0) redirect("/login");
 
-  if (!membership) redirect("/login");
+  const membership =
+    memberships.find((m) => m.role === session.activeRole) ??
+    [...memberships].sort((a, b) => ROLE_PRIORITY[a.role] - ROLE_PRIORITY[b.role])[0];
 
-  return { user: session.user, organizationId: membership.organizationId, role: membership.role };
+  return {
+    user: session.user,
+    organizationId: membership.organizationId,
+    role: membership.role,
+    availableRoles: memberships.map((m) => m.role),
+  };
 });
 
 export async function requireAdminOrStaff() {

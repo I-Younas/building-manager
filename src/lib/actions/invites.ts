@@ -142,11 +142,11 @@ export async function redeemInvite(
     userId = user.id;
   }
 
-  const alreadyMember = await prisma.orgMembership.findUnique({
-    where: { userId_organizationId: { userId, organizationId: invite.organizationId } },
+  const alreadyMember = await prisma.orgMembership.findFirst({
+    where: { userId, organizationId: invite.organizationId, role: invite.role },
   });
   if (alreadyMember) {
-    return { error: "You're already a member of this organization." };
+    return { error: "You already hold this role in this organization." };
   }
 
   await prisma.$transaction(async (tx) => {
@@ -170,6 +170,6 @@ export async function redeemInvite(
     });
   });
 
-  await createSession(userId, invite.organizationId);
+  await createSession(userId, invite.organizationId, invite.role);
   redirect("/dashboard");
 }
