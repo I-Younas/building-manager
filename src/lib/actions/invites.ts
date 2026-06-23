@@ -7,10 +7,11 @@ import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
 import { generateInviteCode } from "@/lib/auth/crypto";
 import { createInviteSchema, redeemInviteSchema } from "@/lib/validation/invites";
+import { sendInviteEmail } from "@/lib/email";
 
 const INVITE_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
-export type CreateInviteState = { error: string } | { code: string } | undefined;
+export type CreateInviteState = { error: string } | { code: string; emailSent: boolean } | undefined;
 
 export async function createInviteCode(
   _prevState: CreateInviteState,
@@ -64,6 +65,8 @@ export async function createInviteCode(
 
   const code = generateInviteCode();
 
+  const organization = await prisma.organization.findUnique({ where: { id: organizationId } });
+
   await prisma.inviteCode.create({
     data: {
       organizationId,
@@ -77,7 +80,20 @@ export async function createInviteCode(
     },
   });
 
-  return { code };
+  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  let emailSent = false;
+  try {
+    await sendInviteEmail({
+      to: email,
+      organizationName: organization?.name ?? "your organization",
+      inviteUrl: `${appUrl}/invite/${code}`,
+    });
+    emailSent = true;
+  } catch (err) {
+    console.error("Failed to send invite email:", err);
+  }
+
+  return { code, emailSent };
 }
 
 export type RedeemInviteState = { error: string } | undefined;
