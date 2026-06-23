@@ -31,6 +31,10 @@ export function SignupForm() {
         Password
         <input name="password" type="password" required minLength={8} className={inputClasses} />
       </label>
+      <p className="text-sm text-slate-500">
+        Already have an account with this email? Enter its existing password to create another organization under
+        it.
+      </p>
 
       {state?.error ? <ErrorText>{state.error}</ErrorText> : null}
 

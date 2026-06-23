@@ -44,28 +44,34 @@ export async function signupOrgAdmin(
 
   const { organizationName, name, email, password } = parsed.data;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return { error: "An account with this email already exists." };
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    if (!existingUser.isActive) {
+      return { error: "This account has been deactivated." };
+    }
+    const valid = await verifyPassword(password, existingUser.passwordHash);
+    if (!valid) {
+      return {
+        error: "An account with this email already exists. Enter its existing password to create another organization under it.",
+      };
+    }
   }
 
-  const passwordHash = await hashPassword(password);
+  const passwordHash = existingUser ? null : await hashPassword(password);
   const slug = await uniqueOrgSlug(organizationName);
 
-  const { user, organization } = await prisma.$transaction(async (tx) => {
+  const { userId, organizationId } = await prisma.$transaction(async (tx) => {
     const organization = await tx.organization.create({
       data: { name: organizationName, slug },
     });
-    const user = await tx.user.create({
-      data: { name, email, passwordHash },
-    });
+    const user = existingUser ?? (await tx.user.create({ data: { name, email, passwordHash: passwordHash! } }));
     await tx.orgMembership.create({
       data: { userId: user.id, organizationId: organization.id, role: "ORG_ADMIN" },
     });
-    return { user, organization };
+    return { userId: user.id, organizationId: organization.id };
   });
 
-  await createSession(user.id, organization.id);
+  await createSession(userId, organizationId);
   redirect("/dashboard");
 }
 
