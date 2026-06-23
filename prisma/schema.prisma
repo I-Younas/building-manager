@@ -109,7 +109,6 @@ model Session {
   userId               String
   tokenHash            String    @unique
   activeOrganizationId String?
-  activeRole           OrgRole?
   expiresAt            DateTime
   createdAt            DateTime  @default(now())
   userAgent            String?
@@ -160,7 +159,7 @@ model OrgMembership {
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, organizationId, role])
+  @@unique([userId, organizationId])
   @@index([organizationId, role])
 }
 

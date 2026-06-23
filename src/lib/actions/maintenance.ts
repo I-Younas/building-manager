@@ -142,10 +142,12 @@ export async function assignTicket(
 
   let assigneeUserId: string | null = null;
   if (parsed.data.assigneeUserId) {
-    const memberships = await prisma.orgMembership.findMany({
-      where: { userId: parsed.data.assigneeUserId, organizationId },
+    const membership = await prisma.orgMembership.findUnique({
+      where: {
+        userId_organizationId: { userId: parsed.data.assigneeUserId, organizationId },
+      },
     });
-    if (!memberships.some((m) => m.role !== "RESIDENT")) {
+    if (!membership || membership.role === "RESIDENT") {
       return { error: "Tickets can only be assigned to staff or admins in this organization." };
     }
     assigneeUserId = parsed.data.assigneeUserId;

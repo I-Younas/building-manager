@@ -3,12 +3,11 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
-import { createSession, destroySession, setActiveOrganization, setActiveRole } from "@/lib/auth/session";
-import { requireUser, requireOrgScope } from "@/lib/auth/dal";
+import { createSession, destroySession, setActiveOrganization } from "@/lib/auth/session";
+import { requireUser } from "@/lib/auth/dal";
 import { generatePasswordResetToken, sha256 } from "@/lib/auth/crypto";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { signupSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@/lib/validation/auth";
-import type { OrgRole } from "@/generated/prisma/client";
 
 export type AuthActionState = { error: string } | undefined;
 
@@ -77,7 +76,7 @@ export async function signupOrgAdmin(
     return { userId: user.id, organizationId: organization.id };
   });
 
-  await createSession(userId, organizationId, "ORG_ADMIN");
+  await createSession(userId, organizationId);
   redirect("/dashboard");
 }
 
@@ -123,8 +122,8 @@ export async function logout() {
 export async function switchActiveOrganization(organizationId: string) {
   const user = await requireUser();
 
-  const membership = await prisma.orgMembership.findFirst({
-    where: { userId: user.id, organizationId },
+  const membership = await prisma.orgMembership.findUnique({
+    where: { userId_organizationId: { userId: user.id, organizationId } },
   });
 
   if (!membership) {
@@ -132,20 +131,6 @@ export async function switchActiveOrganization(organizationId: string) {
   }
 
   await setActiveOrganization(organizationId);
-  redirect("/dashboard");
-}
-
-// Lets a user who holds more than one role in the same organization (e.g. an
-// ORG_ADMIN testing the RESIDENT experience under the same account) switch
-// which role the current session acts as.
-export async function switchActiveRole(role: OrgRole) {
-  const { availableRoles } = await requireOrgScope();
-
-  if (!availableRoles.includes(role)) {
-    throw new Error("You don't hold this role in the current organization");
-  }
-
-  await setActiveRole(role);
   redirect("/dashboard");
 }
 
