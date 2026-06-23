@@ -41,3 +41,22 @@ export async function sendInviteEmail({
     throw new Error(error.message);
   }
 }
+
+export async function sendPasswordResetEmail({ to, resetUrl }: { to: string; resetUrl: string }) {
+  const from = process.env.EMAIL_FROM;
+  if (!from) {
+    throw new Error("EMAIL_FROM is not configured.");
+  }
+
+  const { error } = await getClient().emails.send({
+    from,
+    to,
+    subject: "Reset your Building Manager password",
+    text: `We received a request to reset your Building Manager password.\n\nFollow this link to choose a new password:\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, you can ignore this email.`,
+    html: `<p>We received a request to reset your Building Manager password.</p><p><a href="${resetUrl}">Click here to choose a new password</a></p><p>This link expires in 1 hour. If you didn&apos;t request this, you can ignore this email.</p>`,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}

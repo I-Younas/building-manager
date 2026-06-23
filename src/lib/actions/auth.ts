@@ -5,10 +5,15 @@ import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { createSession, destroySession, setActiveOrganization, setActiveRole } from "@/lib/auth/session";
 import { requireUser, requireOrgScope } from "@/lib/auth/dal";
-import { signupSchema, loginSchema } from "@/lib/validation/auth";
+import { generatePasswordResetToken, sha256 } from "@/lib/auth/crypto";
+import { sendPasswordResetEmail } from "@/lib/email";
+import { signupSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@/lib/validation/auth";
 import type { OrgRole } from "@/generated/prisma/client";
 
 export type AuthActionState = { error: string } | undefined;
+
+const RESET_TOKEN_DURATION_MS = 60 * 60 * 1000;
+const FORGOT_PASSWORD_MESSAGE = "If an account exists for that email, we've sent a password reset link.";
 
 function slugify(name: string) {
   return name
@@ -142,4 +147,66 @@ export async function switchActiveRole(role: OrgRole) {
 
   await setActiveRole(role);
   redirect("/dashboard");
+}
+
+export type ForgotPasswordState = { message: string } | undefined;
+
+export async function requestPasswordReset(
+  _prevState: ForgotPasswordState,
+  formData: FormData,
+): Promise<ForgotPasswordState> {
+  const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
+  // Always return the same message whether or not the email matched an
+  // account, so this can't be used to enumerate registered emails.
+  if (!parsed.success) {
+    return { message: FORGOT_PASSWORD_MESSAGE };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  if (user && user.isActive) {
+    const token = generatePasswordResetToken();
+    await prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: sha256(token),
+        expiresAt: new Date(Date.now() + RESET_TOKEN_DURATION_MS),
+      },
+    });
+
+    const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+    try {
+      await sendPasswordResetEmail({ to: user.email, resetUrl: `${appUrl}/reset-password/${token}` });
+    } catch (err) {
+      console.error("Failed to send password reset email:", err);
+    }
+  }
+
+  return { message: FORGOT_PASSWORD_MESSAGE };
+}
+
+export async function resetPassword(
+  token: string,
+  _prevState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const parsed = resetPasswordSchema.safeParse({ password: formData.get("password") });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Please check the form and try again." };
+  }
+
+  const resetToken = await prisma.passwordResetToken.findUnique({ where: { tokenHash: sha256(token) } });
+  if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
+    return { error: "This password reset link is invalid or has expired." };
+  }
+
+  const passwordHash = await hashPassword(parsed.data.password);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({ where: { id: resetToken.userId }, data: { passwordHash } });
+    await tx.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } });
+    // Resetting a password invalidates every existing session for the account.
+    await tx.session.deleteMany({ where: { userId: resetToken.userId } });
+  });
+
+  redirect("/login");
 }

@@ -89,6 +89,7 @@ model User {
 
   memberships         OrgMembership[]
   sessions            Session[]
+  passwordResetTokens PasswordResetToken[]
   unitMemberships     UnitResident[]
   assignedTickets     MaintenanceTicket[]   @relation("AssignedStaff")
   reportedTickets     MaintenanceTicket[]   @relation("ReportedBy")
@@ -113,6 +114,20 @@ model Session {
   createdAt            DateTime  @default(now())
   userAgent            String?
   ipAddress            String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

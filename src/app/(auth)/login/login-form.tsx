@@ -21,6 +21,9 @@ export function LoginForm() {
         Password
         <input name="password" type="password" required className={inputClasses} />
       </label>
+      <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:underline">
+        Forgot your password?
+      </Link>
 
       {state?.error ? <ErrorText>{state.error}</ErrorText> : null}
 
