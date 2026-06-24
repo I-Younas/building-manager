@@ -1,0 +1,140 @@
+{
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "maintenance": "Entretien",
+    "payments": "Paiements",
+    "announcements": "Annonces",
+    "buildings": "Immeubles",
+    "residents": "Résidents",
+    "logout": "Se déconnecter",
+    "switchOrg": "Changer d'organisation"
+  },
+  "landing": {
+    "tagline": "Building Manager",
+    "heading": "Un logiciel de gestion immobilière sans le prix d'une solution d'entreprise",
+    "subtitle": "Entretien, paiements et annonces — tout ce dont un immeuble petit ou moyen a besoin, au même endroit.",
+    "getStarted": "Commencer",
+    "logIn": "Se connecter"
+  },
+  "auth": {
+    "login": {
+      "title": "Se connecter",
+      "email": "Courriel",
+      "password": "Mot de passe",
+      "forgotPassword": "Mot de passe oublié ?",
+      "loggingIn": "Connexion...",
+      "logIn": "Se connecter",
+      "settingUp": "Vous créez un nouvel immeuble ?",
+      "createOrg": "Créer une organisation"
+    },
+    "forgotPassword": {
+      "title": "Réinitialiser votre mot de passe",
+      "description": "Entrez l'adresse courriel de votre compte et nous vous envoyons un lien pour choisir un nouveau mot de passe.",
+      "email": "Courriel",
+      "sendResetLink": "Envoyer le lien de réinitialisation",
+      "sending": "Envoi en cours...",
+      "backToLogin": "Retour à la connexion"
+    },
+    "resetPassword": {
+      "title": "Choisissez un nouveau mot de passe",
+      "newPassword": "Nouveau mot de passe",
+      "setNewPassword": "Définir le nouveau mot de passe",
+      "saving": "Enregistrement...",
+      "expiredTitle": "Lien de réinitialisation invalide",
+      "expiredDescription": "Ce lien de réinitialisation a déjà été utilisé ou a expiré. Demandez-en un nouveau depuis la page de connexion."
+    },
+    "signup": {
+      "title": "Créez votre organisation",
+      "orgName": "Nom de l'organisation",
+      "yourName": "Votre nom",
+      "email": "Courriel",
+      "password": "Mot de passe",
+      "alreadyHaveAccount": "Vous avez déjà un compte avec ce courriel ? Entrez son mot de passe existant pour créer une autre organisation sous celui-ci.",
+      "createOrganization": "Créer l'organisation",
+      "creating": "Création en cours...",
+      "haveAccount": "Vous avez déjà un compte ?",
+      "logIn": "Se connecter"
+    },
+    "invite": {
+      "joinOrg": "Rejoindre {orgName}",
+      "invitedAsResident": "Vous avez été invité en tant que résident",
+      "invitedAsStaff": "Vous avez été invité en tant que membre du personnel",
+      "firstName": "Prénom",
+      "lastName": "Nom de famille",
+      "email": "Courriel",
+      "password": "Mot de passe",
+      "helperText": "Si vous avez déjà un compte avec ce courriel, entrez son mot de passe existant pour le rejoindre. Sinon, ce mot de passe créera votre nouveau compte.",
+      "join": "Rejoindre",
+      "joining": "Adhésion en cours...",
+      "expiredTitle": "Invitation invalide",
+      "expiredDescription": "Ce lien d'invitation a déjà été utilisé ou a expiré. Demandez-en un nouveau à l'administrateur de votre immeuble."
+    }
+  },
+  "common": {
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "save": "Enregistrer",
+    "cancel": "Annuler"
+  },
+  "dashboard": {
+    "welcome": "Bienvenue, {name}",
+    "role": "Rôle : {role}",
+    "openTickets": "Tickets ouverts",
+    "myOpenTickets": "Mes tickets ouverts",
+    "outstandingInvoices": "Factures impayées",
+    "myOutstandingInvoices": "Mes factures impayées",
+    "announcements": "Annonces",
+    "noAnnouncements": "Aucune annonce pour le moment"
+  },
+  "maintenance": {
+    "heading": "Entretien",
+    "reportIssue": "Signaler un problème",
+    "all": "Tous",
+    "noTickets": "Aucun ticket pour le moment",
+    "title": "Titre",
+    "status": "Statut",
+    "priority": "Priorité",
+    "unit": "Unité",
+    "assignedTo": "Assigné à",
+    "reported": "Signalé",
+    "lastUpdated": "Dernière mise à jour",
+    "assigned": "Assigné",
+    "resolved": "Résolu",
+    "updateStatus": "Mettre à jour le statut",
+    "markResolved": "Marquer comme résolu",
+    "assign": "Assigner"
+  },
+  "announcements": {
+    "heading": "Annonces",
+    "templates": "Modèles",
+    "backToAnnouncements": "Retour aux annonces",
+    "postAnnouncement": "Publier une annonce",
+    "search": "Rechercher des annonces...",
+    "noAnnouncements": "Aucune annonce pour le moment",
+    "noTemplates": "Aucun modèle pour le moment",
+    "view": "Voir",
+    "duplicate": "Dupliquer",
+    "iveReadThis": "J'ai lu ceci",
+    "acknowledged": "Confirmé"
+  },
+  "buildings": {
+    "heading": "Immeubles",
+    "addBuilding": "Ajouter un immeuble",
+    "building": "Immeuble",
+    "units": "Unités",
+    "noBuildings": "Aucun immeuble pour le moment",
+    "noBuildingsDescription": "Ajoutez votre premier immeuble pour commencer.",
+    "noUnits": "Aucune unité pour le moment",
+    "addUnit": "Ajouter une unité",
+    "dangerZone": "Zone de danger"
+  },
+  "residents": {
+    "heading": "Résidents",
+    "inviteResident": "Inviter un résident",
+    "name": "Nom",
+    "email": "Courriel",
+    "unit": "Unité",
+    "noUnitLinked": "aucune unité associée",
+    "noResidents": "Aucun résident pour le moment"
+  }
+}

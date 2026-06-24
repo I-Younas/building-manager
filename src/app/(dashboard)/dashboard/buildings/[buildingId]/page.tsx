@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { AddUnitForm } from "./add-unit-form";
+import { DeleteBuildingForm } from "./delete-building-form";
 import { Card, EmptyState, LinkButton, PageHeader } from "@/components/ui";
 
 export default async function BuildingDetailPage({
@@ -11,6 +13,7 @@ export default async function BuildingDetailPage({
   params: Promise<{ buildingId: string }>;
 }) {
   const { organizationId } = await requireAdminOrStaff();
+  const dict = await getDictionary();
   const { buildingId } = await params;
 
   const building = await prisma.building.findFirst({
@@ -20,6 +23,8 @@ export default async function BuildingDetailPage({
 
   if (!building) notFound();
 
+  const residentCount = await prisma.unitResident.count({ where: { unit: { buildingId: building.id } } });
+
   return (
     <div>
       <PageHeader
@@ -27,14 +32,14 @@ export default async function BuildingDetailPage({
         description={`${building.addressLine1}${building.addressLine2 ? `, ${building.addressLine2}` : ""}, ${building.city}${building.region ? `, ${building.region}` : ""} ${building.postalCode ?? ""}, ${building.country}`}
         actions={
           <LinkButton href={`/dashboard/buildings/${building.id}/edit`} variant="secondary">
-            Edit
+            {dict.common.edit}
           </LinkButton>
         }
       />
 
-      <h2 className="mb-3 text-lg font-semibold text-slate-900">Units</h2>
+      <h2 className="mb-3 text-lg font-semibold text-slate-900">{dict.buildings.units}</h2>
       {building.units.length === 0 ? (
-        <EmptyState title="No units yet" />
+        <EmptyState title={dict.buildings.noUnits} />
       ) : (
         <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {building.units.map((unit) => (
@@ -48,9 +53,19 @@ export default async function BuildingDetailPage({
         </div>
       )}
 
-      <Card className="max-w-lg">
-        <h3 className="mb-4 text-base font-semibold text-slate-900">Add unit</h3>
+      <Card className="mb-8 max-w-lg">
+        <h3 className="mb-4 text-base font-semibold text-slate-900">{dict.buildings.addUnit}</h3>
         <AddUnitForm buildingId={building.id} />
+      </Card>
+
+      <Card className="max-w-lg border-red-200">
+        <h3 className="mb-4 text-base font-semibold text-red-700">{dict.buildings.dangerZone}</h3>
+        <DeleteBuildingForm
+          buildingId={building.id}
+          buildingName={building.name}
+          unitCount={building.units.length}
+          residentCount={residentCount}
+        />
       </Card>
     </div>
   );

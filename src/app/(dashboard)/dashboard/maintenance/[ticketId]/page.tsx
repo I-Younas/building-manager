@@ -2,10 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
+import { formatDateTime } from "@/lib/format";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { markTicketResolved } from "@/lib/actions/maintenance";
 import { StatusForm } from "./status-form";
 import { AssignForm } from "./assign-form";
 import { CommentForm } from "./comment-form";
-import { Card, PageHeader, StatusBadge } from "@/components/ui";
+import { Button, Card, PageHeader, StatusBadge } from "@/components/ui";
 
 export default async function TicketDetailPage({
   params,
@@ -13,6 +16,7 @@ export default async function TicketDetailPage({
   params: Promise<{ ticketId: string }>;
 }) {
   const { user, organizationId, role } = await requireOrgScope();
+  const dict = await getDictionary();
   const { ticketId } = await params;
 
   const ticket = await prisma.maintenanceTicket.findFirst({
@@ -81,14 +85,48 @@ export default async function TicketDetailPage({
         <p className="whitespace-pre-wrap text-sm text-slate-700">{ticket.description}</p>
       </Card>
 
+      <Card className="mb-8">
+        <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-slate-500">{dict.maintenance.reported}</dt>
+            <dd className="text-slate-900">{formatDateTime(ticket.createdAt)}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-500">{dict.maintenance.lastUpdated}</dt>
+            <dd className="text-slate-900">{formatDateTime(ticket.updatedAt)}</dd>
+          </div>
+          {ticket.assignedAt ? (
+            <div>
+              <dt className="text-slate-500">{dict.maintenance.assigned}</dt>
+              <dd className="text-slate-900">{formatDateTime(ticket.assignedAt)}</dd>
+            </div>
+          ) : null}
+          {ticket.resolvedAt ? (
+            <div>
+              <dt className="text-slate-500">{dict.maintenance.resolved}</dt>
+              <dd className="text-slate-900">{formatDateTime(ticket.resolvedAt)}</dd>
+            </div>
+          ) : null}
+        </dl>
+      </Card>
+
       {isStaffOrAdmin ? (
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Card>
-            <h2 className="mb-3 text-sm font-semibold text-slate-900">Update status</h2>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">{dict.maintenance.updateStatus}</h2>
+              {ticket.status !== "RESOLVED" && ticket.status !== "CLOSED" ? (
+                <form action={markTicketResolved.bind(null, ticket.id)}>
+                  <Button type="submit" variant="secondary" size="sm">
+                    {dict.maintenance.markResolved}
+                  </Button>
+                </form>
+              ) : null}
+            </div>
             <StatusForm ticketId={ticket.id} currentStatus={ticket.status} />
           </Card>
           <Card>
-            <h2 className="mb-3 text-sm font-semibold text-slate-900">Assign</h2>
+            <h2 className="mb-3 text-sm font-semibold text-slate-900">{dict.maintenance.assign}</h2>
             <AssignForm ticketId={ticket.id} staff={staffOptions} currentAssigneeId={ticket.assignedToId} />
           </Card>
         </div>

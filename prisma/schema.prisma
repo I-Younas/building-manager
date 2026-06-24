@@ -38,13 +38,6 @@ enum TicketPriority {
   URGENT
 }
 
-enum BookingStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
-}
-
 enum InvoiceStatus {
   DRAFT
   ISSUED
@@ -63,17 +56,52 @@ enum PaymentMethod {
   OTHER
 }
 
-enum VisitorStatus {
-  EXPECTED
-  CHECKED_IN
-  CHECKED_OUT
-  CANCELLED
-  NO_SHOW
+enum AnnouncementAudience {
+  ALL_ORG
+  BUILDINGS
+  UNITS
+  INDIVIDUALS
 }
 
-enum AnnouncementScope {
-  ORGANIZATION
-  BUILDING
+enum AnnouncementCategory {
+  GENERAL
+  MAINTENANCE
+  EMERGENCY
+  POLICY
+  EVENT
+  BILLING
+  AMENITY
+}
+
+enum AnnouncementPriority {
+  NORMAL
+  IMPORTANT
+  URGENT
+}
+
+enum AnnouncementStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+}
+
+enum AnnouncementRecurrence {
+  NONE
+  WEEKLY
+  MONTHLY
+}
+
+enum RecipientOverrideMode {
+  INCLUDE
+  EXCLUDE
+}
+
+enum AnnouncementDeliveryStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  BOUNCED
+  FAILED
 }
 
 // ---------- Global identity ----------
@@ -87,30 +115,30 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  memberships         OrgMembership[]
-  sessions            Session[]
-  passwordResetTokens PasswordResetToken[]
-  unitMemberships     UnitResident[]
-  assignedTickets     MaintenanceTicket[]   @relation("AssignedStaff")
-  reportedTickets     MaintenanceTicket[]   @relation("ReportedBy")
-  ticketComments      TicketComment[]
-  ticketStatusLogs    TicketStatusHistory[]
-  requestedBookings   FacilityBooking[]     @relation("RequestedBy")
-  approvedBookings    FacilityBooking[]     @relation("ApprovedBy")
-  issuedInvoices      Invoice[]             @relation("IssuedBy")
-  recordedPayments    Payment[]             @relation("RecordedBy")
-  registeredVisitors  Visitor[]             @relation("RegisteredBy")
-  postedAnnouncements Announcement[]        @relation("PostedBy")
-  createdInvites      InviteCode[]          @relation("CreatedInvite")
+  memberships                    OrgMembership[]
+  sessions                       Session[]
+  passwordResetTokens            PasswordResetToken[]
+  unitMemberships                UnitResident[]
+  assignedTickets                MaintenanceTicket[]             @relation("AssignedStaff")
+  reportedTickets                MaintenanceTicket[]             @relation("ReportedBy")
+  ticketComments                 TicketComment[]
+  ticketStatusLogs               TicketStatusHistory[]
+  issuedInvoices                 Invoice[]                       @relation("IssuedBy")
+  recordedPayments               Payment[]                       @relation("RecordedBy")
+  postedAnnouncements            Announcement[]                  @relation("PostedBy")
+  createdInvites                 InviteCode[]                    @relation("CreatedInvite")
+  announcementRecipientOverrides AnnouncementRecipientOverride[]
+  announcementAcknowledgments    AnnouncementAcknowledgment[]
+  announcementDeliveries         AnnouncementDelivery[]
 }
 
 model Session {
-  id                   String    @id @default(cuid())
+  id                   String   @id @default(cuid())
   userId               String
-  tokenHash            String    @unique
+  tokenHash            String   @unique
   activeOrganizationId String?
   expiresAt            DateTime
-  createdAt            DateTime  @default(now())
+  createdAt            DateTime @default(now())
   userAgent            String?
   ipAddress            String?
 
@@ -176,10 +204,8 @@ model Building {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  units         Unit[]
-  facilities    Facility[]
-  announcements Announcement[]
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  units        Unit[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
@@ -197,9 +223,7 @@ model Unit {
   building      Building            @relation(fields: [buildingId], references: [id], onDelete: Cascade)
   residentLinks UnitResident[]
   tickets       MaintenanceTicket[]
-  bookings      FacilityBooking[]
   invoices      Invoice[]
-  visitors      Visitor[]
   inviteCodes   InviteCode[]
 
   @@unique([buildingId, unitNumber])
@@ -258,6 +282,7 @@ model MaintenanceTicket {
   priority       TicketPriority @default(MEDIUM)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  assignedAt     DateTime?
   resolvedAt     DateTime?
 
   unit       Unit  @relation(fields: [unitId], references: [id], onDelete: Cascade)
@@ -299,57 +324,6 @@ model TicketStatusHistory {
   changedBy User              @relation(fields: [changedById], references: [id])
 
   @@index([ticketId])
-}
-
-// ---------- Module 2: Facility Booking ----------
-
-model Facility {
-  id                 String   @id @default(cuid())
-  organizationId     String
-  buildingId         String
-  name               String
-  description        String?
-  requiresApproval   Boolean  @default(true)
-  openTime           String
-  closeTime          String
-  minNoticeHours     Int      @default(24)
-  maxDurationMinutes Int      @default(120)
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  building Building          @relation(fields: [buildingId], references: [id], onDelete: Cascade)
-  bookings FacilityBooking[]
-
-  @@index([organizationId])
-  @@index([buildingId])
-}
-
-model FacilityBooking {
-  id             String        @id @default(cuid())
-  organizationId String
-  facilityId     String
-  unitId         String
-  requestedById  String
-  approvedById   String?
-  startsAt       DateTime
-  endsAt         DateTime
-  status         BookingStatus @default(PENDING)
-  notes          String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  facility    Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  unit        Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  requestedBy User     @relation("RequestedBy", fields: [requestedById], references: [id])
-  approvedBy  User?    @relation("ApprovedBy", fields: [approvedById], references: [id])
-
-  // Cheap guard against exact-duplicate slot collisions; true overlap
-  // (intersecting ranges) is enforced in the server action, not the DB.
-  @@unique([facilityId, startsAt])
-  @@index([organizationId])
-  @@index([facilityId, startsAt, endsAt])
-  @@index([unitId])
 }
 
 // ---------- Module 3: Billing & Invoicing ----------
@@ -405,47 +379,107 @@ model Payment {
   @@index([invoiceId])
 }
 
-// ---------- Module 4: Visitor & Announcement Management ----------
-
-model Visitor {
-  id             String        @id @default(cuid())
-  organizationId String
-  unitId         String
-  registeredById String
-  name           String
-  phone          String?
-  purpose        String?
-  expectedAt     DateTime
-  checkedInAt    DateTime?
-  checkedOutAt   DateTime?
-  status         VisitorStatus @default(EXPECTED)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  unit         Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  registeredBy User @relation("RegisteredBy", fields: [registeredById], references: [id])
-
-  @@index([organizationId, expectedAt])
-  @@index([unitId])
-}
+// ---------- Module 4: Announcement Management ----------
 
 model Announcement {
-  id             String            @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
-  buildingId     String?
   postedById     String
   title          String
   body           String
-  scope          AnnouncementScope
-  publishedAt    DateTime          @default(now())
+  publishedAt    DateTime  @default(now())
   expiresAt      DateTime?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  building     Building?    @relation(fields: [buildingId], references: [id], onDelete: Cascade)
-  postedBy     User         @relation("PostedBy", fields: [postedById], references: [id])
+  audience                   AnnouncementAudience   @default(ALL_ORG)
+  targetBuildingIds          String[]               @default([])
+  targetUnitIds              String[]               @default([])
+  category                   AnnouncementCategory   @default(GENERAL)
+  priority                   AnnouncementPriority   @default(NORMAL)
+  status                     AnnouncementStatus     @default(SENT)
+  scheduledAt                DateTime?
+  recurrence                 AnnouncementRecurrence @default(NONE)
+  recurrenceEndsAt           DateTime?
+  nextRunAt                  DateTime?
+  allowReplies               Boolean                @default(false)
+  requireAcknowledgment      Boolean                @default(false)
+  acknowledgmentReminderDays Int?
+  isTemplate                 Boolean                @default(false)
+  correctsAnnouncementId     String?
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  postedBy     User           @relation("PostedBy", fields: [postedById], references: [id])
+  corrects     Announcement?  @relation("AnnouncementCorrection", fields: [correctsAnnouncementId], references: [id])
+  corrections  Announcement[] @relation("AnnouncementCorrection")
+
+  attachments        AnnouncementAttachment[]
+  recipientOverrides AnnouncementRecipientOverride[]
+  acknowledgments    AnnouncementAcknowledgment[]
+  deliveries         AnnouncementDelivery[]
 
   @@index([organizationId, publishedAt])
-  @@index([buildingId])
+  @@index([organizationId, status])
+}
+
+model AnnouncementAttachment {
+  id             String   @id @default(cuid())
+  announcementId String
+  fileName       String
+  fileUrl        String
+  fileSize       Int
+  contentType    String
+  createdAt      DateTime @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@index([announcementId])
+}
+
+model AnnouncementRecipientOverride {
+  id             String                @id @default(cuid())
+  announcementId String
+  userId         String
+  mode           RecipientOverrideMode
+  createdAt      DateTime              @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+}
+
+model AnnouncementAcknowledgment {
+  id             String   @id @default(cuid())
+  announcementId String
+  userId         String
+  acknowledgedAt DateTime @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+}
+
+model AnnouncementDelivery {
+  id              String                     @id @default(cuid())
+  announcementId  String
+  userId          String
+  email           String
+  resendMessageId String?
+  status          AnnouncementDeliveryStatus @default(QUEUED)
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  bouncedAt       DateTime?
+  openedAt        DateTime?
+  clickedAt       DateTime?
+  reminderSentAt  DateTime?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([resendMessageId])
 }

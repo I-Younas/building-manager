@@ -42,6 +42,45 @@ export async function sendInviteEmail({
   }
 }
 
+export async function sendAnnouncementEmail({
+  to,
+  subject,
+  bodyHtml,
+  attachments,
+  replyTo,
+}: {
+  to: string;
+  subject: string;
+  bodyHtml: string;
+  attachments?: { filename: string; url: string }[];
+  replyTo?: string;
+}) {
+  const from = process.env.EMAIL_FROM;
+  if (!from) {
+    throw new Error("EMAIL_FROM is not configured.");
+  }
+
+  const attachmentsHtml = attachments?.length
+    ? `<p>Attachments:</p><ul>${attachments
+        .map((a) => `<li><a href="${a.url}">${a.filename}</a></li>`)
+        .join("")}</ul>`
+    : "";
+
+  const { data, error } = await getClient().emails.send({
+    from,
+    to,
+    subject,
+    replyTo,
+    html: `${bodyHtml}${attachmentsHtml}`,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return { messageId: data?.id ?? null };
+}
+
 export async function sendPasswordResetEmail({ to, resetUrl }: { to: string; resetUrl: string }) {
   const from = process.env.EMAIL_FROM;
   if (!from) {

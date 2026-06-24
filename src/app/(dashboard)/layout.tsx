@@ -3,24 +3,13 @@ import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { logout, switchActiveOrganization } from "@/lib/actions/auth";
 import { SidebarNav } from "@/components/sidebar-nav";
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { getDictionary, getLocale } from "@/lib/i18n/get-dictionary";
 import { Badge, Button } from "@/components/ui";
-
-const NAV_ITEMS_BASE = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/dashboard/maintenance", label: "Maintenance" },
-  { href: "/dashboard/facilities", label: "Facilities" },
-  { href: "/dashboard/billing/invoices", label: "Billing" },
-  { href: "/dashboard/visitors", label: "Visitors" },
-  { href: "/dashboard/announcements", label: "Announcements" },
-];
-
-const NAV_ITEMS_ADMIN = [
-  { href: "/dashboard/buildings", label: "Buildings" },
-  { href: "/dashboard/residents", label: "Residents" },
-];
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, organizationId, role } = await requireOrgScope();
+  const [dict, locale] = await Promise.all([getDictionary(), getLocale()]);
 
   const memberships = await prisma.orgMembership.findMany({
     where: { userId: user.id },
@@ -29,7 +18,18 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   });
 
   const currentOrg = memberships.find((m) => m.organizationId === organizationId);
-  const navItems = role !== "RESIDENT" ? [...NAV_ITEMS_BASE, ...NAV_ITEMS_ADMIN] : NAV_ITEMS_BASE;
+
+  const navItemsBase = [
+    { href: "/dashboard", label: dict.nav.dashboard },
+    { href: "/dashboard/maintenance", label: dict.nav.maintenance },
+    { href: "/dashboard/billing/invoices", label: dict.nav.payments },
+    { href: "/dashboard/announcements", label: dict.nav.announcements },
+  ];
+  const navItemsAdmin = [
+    { href: "/dashboard/buildings", label: dict.nav.buildings },
+    { href: "/dashboard/residents", label: dict.nav.residents },
+  ];
+  const navItems = role !== "RESIDENT" ? [...navItemsBase, ...navItemsAdmin] : navItemsBase;
 
   return (
     <div className="flex min-h-screen">
@@ -48,7 +48,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             {memberships.length > 1 ? (
               <details className="relative">
                 <summary className="cursor-pointer list-none text-sm font-medium text-slate-600 hover:text-slate-900">
-                  Switch organization
+                  {dict.nav.switchOrg}
                 </summary>
                 <div className="absolute left-0 z-10 mt-2 w-56 rounded-md border border-slate-200 bg-white p-1 shadow-lg">
                   {memberships.map((m) => (
@@ -68,10 +68,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           </div>
 
           <div className="flex items-center gap-4">
+            <LocaleSwitcher locale={locale} />
             <span className="text-sm text-slate-600">{user.name}</span>
             <form action={logout}>
               <Button type="submit" variant="secondary" size="sm">
-                Log out
+                {dict.nav.logout}
               </Button>
             </form>
           </div>

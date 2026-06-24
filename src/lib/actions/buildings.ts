@@ -5,6 +5,8 @@ import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { buildingSchema } from "@/lib/validation/buildings";
 
+export type DeleteBuildingState = { error: string } | undefined;
+
 export type FormActionState = { error: string } | undefined;
 
 function parseBuildingForm(formData: FormData) {
@@ -73,4 +75,26 @@ export async function updateBuilding(
   }
 
   redirect(`/dashboard/buildings/${buildingId}`);
+}
+
+export async function deleteBuilding(
+  buildingId: string,
+  _prevState: DeleteBuildingState,
+  formData: FormData,
+): Promise<DeleteBuildingState> {
+  const { organizationId } = await requireAdminOrStaff();
+
+  const building = await prisma.building.findFirst({ where: { id: buildingId, organizationId } });
+  if (!building) {
+    return { error: "Building not found." };
+  }
+
+  const confirmation = formData.get("confirmName");
+  if (confirmation !== building.name) {
+    return { error: "Type the building name exactly to confirm deletion." };
+  }
+
+  await prisma.building.delete({ where: { id: buildingId } });
+
+  redirect("/dashboard/buildings");
 }

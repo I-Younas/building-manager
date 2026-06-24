@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { getDictionary, formatMessage } from "@/lib/i18n/get-dictionary";
 import { RedeemInviteForm } from "./redeem-invite-form";
 
 export default async function InvitePage({
@@ -8,6 +9,7 @@ export default async function InvitePage({
   params: Promise<{ code: string }>;
 }) {
   const { code } = await params;
+  const dict = await getDictionary();
 
   const invite = await prisma.inviteCode.findUnique({
     where: { code },
@@ -21,23 +23,23 @@ export default async function InvitePage({
   if (isExpired) {
     return (
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">Invite no longer valid</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          This invite link has already been used or has expired. Ask your building admin for a new one.
-        </p>
+        <h1 className="text-xl font-semibold text-slate-900">{dict.auth.invite.expiredTitle}</h1>
+        <p className="mt-2 text-sm text-slate-500">{dict.auth.invite.expiredDescription}</p>
       </div>
     );
   }
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-slate-900">Join {invite.organization.name}</h1>
+      <h1 className="text-xl font-semibold text-slate-900">
+        {formatMessage(dict.auth.invite.joinOrg, { orgName: invite.organization.name })}
+      </h1>
       <p className="mt-2 text-sm text-slate-500">
-        You&apos;ve been invited as {invite.role === "RESIDENT" ? "a resident" : "staff"}
+        {invite.role === "RESIDENT" ? dict.auth.invite.invitedAsResident : dict.auth.invite.invitedAsStaff}
         {invite.unit ? ` of Unit ${invite.unit.unitNumber}, ${invite.unit.building.name}` : ""}.
       </p>
       <div className="mt-6">
-        <RedeemInviteForm code={code} lockedEmail={invite.email} />
+        <RedeemInviteForm code={code} dict={dict.auth.invite} />
       </div>
     </div>
   );

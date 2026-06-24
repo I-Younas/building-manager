@@ -1,0 +1,140 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "maintenance": "Maintenance",
+    "payments": "Payments",
+    "announcements": "Announcements",
+    "buildings": "Buildings",
+    "residents": "Residents",
+    "logout": "Log out",
+    "switchOrg": "Switch organization"
+  },
+  "landing": {
+    "tagline": "Building Manager",
+    "heading": "Building management software, without the enterprise price tag",
+    "subtitle": "Maintenance, billing, and announcements — everything a small or medium building needs, in one place.",
+    "getStarted": "Get started",
+    "logIn": "Log in"
+  },
+  "auth": {
+    "login": {
+      "title": "Log in",
+      "email": "Email",
+      "password": "Password",
+      "forgotPassword": "Forgot your password?",
+      "loggingIn": "Logging in...",
+      "logIn": "Log in",
+      "settingUp": "Setting up a new building?",
+      "createOrg": "Create an organization"
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "description": "Enter the email on your account and we'll send you a link to choose a new password.",
+      "email": "Email",
+      "sendResetLink": "Send reset link",
+      "sending": "Sending...",
+      "backToLogin": "Back to log in"
+    },
+    "resetPassword": {
+      "title": "Choose a new password",
+      "newPassword": "New password",
+      "setNewPassword": "Set new password",
+      "saving": "Saving...",
+      "expiredTitle": "Reset link no longer valid",
+      "expiredDescription": "This password reset link has already been used or has expired. Request a new one from the login page."
+    },
+    "signup": {
+      "title": "Create your organization",
+      "orgName": "Organization name",
+      "yourName": "Your name",
+      "email": "Email",
+      "password": "Password",
+      "alreadyHaveAccount": "Already have an account with this email? Enter its existing password to create another organization under it.",
+      "createOrganization": "Create organization",
+      "creating": "Creating...",
+      "haveAccount": "Already have an account?",
+      "logIn": "Log in"
+    },
+    "invite": {
+      "joinOrg": "Join {orgName}",
+      "invitedAsResident": "You've been invited as a resident",
+      "invitedAsStaff": "You've been invited as staff",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "password": "Password",
+      "helperText": "If you already have an account with this email, enter its existing password to join. Otherwise this password will create your new account.",
+      "join": "Join",
+      "joining": "Joining...",
+      "expiredTitle": "Invite no longer valid",
+      "expiredDescription": "This invite link has already been used or has expired. Ask your building admin for a new one."
+    }
+  },
+  "common": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "dashboard": {
+    "welcome": "Welcome, {name}",
+    "role": "Role: {role}",
+    "openTickets": "Open tickets",
+    "myOpenTickets": "My open tickets",
+    "outstandingInvoices": "Outstanding invoices",
+    "myOutstandingInvoices": "My outstanding invoices",
+    "announcements": "Announcements",
+    "noAnnouncements": "No announcements yet"
+  },
+  "maintenance": {
+    "heading": "Maintenance",
+    "reportIssue": "Report an issue",
+    "all": "All",
+    "noTickets": "No tickets yet",
+    "title": "Title",
+    "status": "Status",
+    "priority": "Priority",
+    "unit": "Unit",
+    "assignedTo": "Assigned to",
+    "reported": "Reported",
+    "lastUpdated": "Last updated",
+    "assigned": "Assigned",
+    "resolved": "Resolved",
+    "updateStatus": "Update status",
+    "markResolved": "Mark resolved",
+    "assign": "Assign"
+  },
+  "announcements": {
+    "heading": "Announcements",
+    "templates": "Templates",
+    "backToAnnouncements": "Back to announcements",
+    "postAnnouncement": "Post announcement",
+    "search": "Search announcements...",
+    "noAnnouncements": "No announcements yet",
+    "noTemplates": "No templates yet",
+    "view": "View",
+    "duplicate": "Duplicate",
+    "iveReadThis": "I've read this",
+    "acknowledged": "Acknowledged"
+  },
+  "buildings": {
+    "heading": "Buildings",
+    "addBuilding": "Add building",
+    "building": "Building",
+    "units": "Units",
+    "noBuildings": "No buildings yet",
+    "noBuildingsDescription": "Add your first building to get started.",
+    "noUnits": "No units yet",
+    "addUnit": "Add unit",
+    "dangerZone": "Danger zone"
+  },
+  "residents": {
+    "heading": "Residents",
+    "inviteResident": "Invite resident",
+    "name": "Name",
+    "email": "Email",
+    "unit": "Unit",
+    "noUnitLinked": "no unit linked",
+    "noResidents": "No residents yet"
+  }
+}

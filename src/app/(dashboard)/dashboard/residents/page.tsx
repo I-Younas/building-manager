@@ -1,5 +1,6 @@
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import {
   EmptyState,
   LinkButton,
@@ -14,6 +15,7 @@ import {
 
 export default async function ResidentsPage() {
   const { organizationId } = await requireAdminOrStaff();
+  const dict = await getDictionary();
 
   const memberships = await prisma.orgMembership.findMany({
     where: { organizationId, role: "RESIDENT" },
@@ -29,18 +31,21 @@ export default async function ResidentsPage() {
 
   return (
     <div>
-      <PageHeader title="Residents" actions={<LinkButton href="/dashboard/residents/invite">Invite resident</LinkButton>} />
+      <PageHeader
+        title={dict.residents.heading}
+        actions={<LinkButton href="/dashboard/residents/invite">{dict.residents.inviteResident}</LinkButton>}
+      />
 
       {memberships.length === 0 ? (
-        <EmptyState title="No residents yet" />
+        <EmptyState title={dict.residents.noResidents} />
       ) : (
         <div className={tableWrapClasses}>
           <table className={tableClasses}>
             <thead className={theadClasses}>
               <tr>
-                <th className={thClasses}>Name</th>
-                <th className={thClasses}>Email</th>
-                <th className={thClasses}>Unit</th>
+                <th className={thClasses}>{dict.residents.name}</th>
+                <th className={thClasses}>{dict.residents.email}</th>
+                <th className={thClasses}>{dict.residents.unit}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -56,7 +61,7 @@ export default async function ResidentsPage() {
                     <td className={tdClasses}>
                       {units.length > 0
                         ? units.map((link) => `${link.unit.building.name} / Unit ${link.unit.unitNumber}`).join(", ")
-                        : "no unit linked"}
+                        : dict.residents.noUnitLinked}
                     </td>
                   </tr>
                 );

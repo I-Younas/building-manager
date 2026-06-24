@@ -104,7 +104,8 @@ export async function redeemInvite(
   formData: FormData,
 ): Promise<RedeemInviteState> {
   const parsed = redeemInviteSchema.safeParse({
-    name: formData.get("name"),
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
     email: formData.get("email"),
     password: formData.get("password"),
   });
@@ -112,14 +113,12 @@ export async function redeemInvite(
     return { error: parsed.error.issues[0]?.message ?? "Please check the form and try again." };
   }
 
-  const { name, email, password } = parsed.data;
+  const { firstName, lastName, email, password } = parsed.data;
+  const name = `${firstName} ${lastName}`;
 
   const invite = await prisma.inviteCode.findUnique({ where: { code } });
   if (!invite || invite.usedAt || invite.expiresAt < new Date()) {
     return { error: "This invite link is invalid or has expired." };
-  }
-  if (invite.email && invite.email.toLowerCase() !== email.toLowerCase()) {
-    return { error: "This invite was issued for a different email address." };
   }
 
   const existingUser = await prisma.user.findUnique({ where: { email } });

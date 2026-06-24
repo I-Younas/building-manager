@@ -155,7 +155,34 @@ export async function assignTicket(
 
   await prisma.maintenanceTicket.update({
     where: { id: ticketId },
-    data: { assignedToId: assigneeUserId },
+    data: { assignedToId: assigneeUserId, assignedAt: assigneeUserId ? new Date() : null },
+  });
+
+  revalidatePath(`/dashboard/maintenance/${ticketId}`);
+}
+
+export async function markTicketResolved(ticketId: string) {
+  const { user, organizationId } = await requireAdminOrStaff();
+
+  const ticket = await prisma.maintenanceTicket.findFirst({
+    where: { id: ticketId, organizationId },
+  });
+  if (!ticket) return;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.maintenanceTicket.update({
+      where: { id: ticketId },
+      data: { status: "RESOLVED", resolvedAt: new Date() },
+    });
+
+    await tx.ticketStatusHistory.create({
+      data: {
+        ticketId,
+        changedById: user.id,
+        fromStatus: ticket.status,
+        toStatus: "RESOLVED",
+      },
+    });
   });
 
   revalidatePath(`/dashboard/maintenance/${ticketId}`);

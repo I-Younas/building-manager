@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { EmptyState, LinkButton, PageHeader, tableClasses, tableWrapClasses, tdClasses, thClasses, theadClasses, trClasses } from "@/components/ui";
 
 export default async function BuildingsPage() {
   const { organizationId } = await requireAdminOrStaff();
+  const dict = await getDictionary();
 
   const buildings = await prisma.building.findMany({
     where: { organizationId },
@@ -15,19 +17,19 @@ export default async function BuildingsPage() {
   return (
     <div>
       <PageHeader
-        title="Buildings"
-        actions={<LinkButton href="/dashboard/buildings/new">Add building</LinkButton>}
+        title={dict.buildings.heading}
+        actions={<LinkButton href="/dashboard/buildings/new">{dict.buildings.addBuilding}</LinkButton>}
       />
 
       {buildings.length === 0 ? (
-        <EmptyState title="No buildings yet" description="Add your first building to get started." />
+        <EmptyState title={dict.buildings.noBuildings} description={dict.buildings.noBuildingsDescription} />
       ) : (
         <div className={tableWrapClasses}>
           <table className={tableClasses}>
             <thead className={theadClasses}>
               <tr>
-                <th className={thClasses}>Building</th>
-                <th className={thClasses}>Units</th>
+                <th className={thClasses}>{dict.buildings.building}</th>
+                <th className={thClasses}>{dict.buildings.units}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

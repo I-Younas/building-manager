@@ -1,79 +1,153 @@
 import Link from "next/link";
 import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
-import { deleteAnnouncement } from "@/lib/actions/announcements";
-import { Button, Card, EmptyState, LinkButton, PageHeader } from "@/components/ui";
+import type { Prisma } from "@/generated/prisma/client";
+import { deleteAnnouncement, acknowledgeAnnouncement } from "@/lib/actions/announcements";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { Badge, Button, Card, EmptyState, LinkButton, PageHeader, StatusBadge, inputClasses } from "@/components/ui";
 
-export default async function AnnouncementsPage() {
+export default async function AnnouncementsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; view?: string }>;
+}) {
   const { user, organizationId, role } = await requireOrgScope();
+  const dict = await getDictionary();
   const isAdmin = role !== "RESIDENT";
+  const { q, view } = await searchParams;
+  const showTemplates = isAdmin && view === "templates";
 
+  let unitIds: string[] = [];
   let buildingIds: string[] = [];
   if (!isAdmin) {
     const myUnits = await prisma.unitResident.findMany({
       where: { userId: user.id, unit: { organizationId } },
       include: { unit: true },
     });
+    unitIds = myUnits.map((link) => link.unitId);
     buildingIds = [...new Set(myUnits.map((link) => link.unit.buildingId))];
   }
 
+  const where: Prisma.AnnouncementWhereInput = {
+    organizationId,
+    isTemplate: showTemplates,
+    ...(q ? { OR: [{ title: { contains: q, mode: "insensitive" } }, { body: { contains: q, mode: "insensitive" } }] } : {}),
+    ...(isAdmin
+      ? {}
+      : {
+          status: "SENT",
+          AND: [
+            {
+              OR: [
+                { audience: "ALL_ORG" },
+                { audience: "BUILDINGS", targetBuildingIds: { hasSome: buildingIds } },
+                { audience: "UNITS", targetUnitIds: { hasSome: unitIds } },
+                { recipientOverrides: { some: { userId: user.id, mode: "INCLUDE" } } },
+              ],
+            },
+            { NOT: { recipientOverrides: { some: { userId: user.id, mode: "EXCLUDE" } } } },
+            { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+          ],
+        }),
+  };
+
   const announcements = await prisma.announcement.findMany({
-    where: {
-      organizationId,
-      ...(isAdmin
-        ? {}
-        : {
-            AND: [
-              { OR: [{ scope: "ORGANIZATION" }, { scope: "BUILDING", buildingId: { in: buildingIds } }] },
-              { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
-            ],
-          }),
+    where,
+    include: {
+      postedBy: true,
+      attachments: true,
+      acknowledgments: { where: { userId: user.id } },
     },
-    include: { building: true, postedBy: true },
-    orderBy: { publishedAt: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 
   return (
     <div>
       <PageHeader
-        title="Announcements"
-        actions={isAdmin ? <LinkButton href="/dashboard/announcements/new">Post announcement</LinkButton> : null}
+        title={showTemplates ? dict.announcements.templates : dict.announcements.heading}
+        actions={
+          isAdmin ? (
+            <>
+              <LinkButton href={showTemplates ? "/dashboard/announcements" : "/dashboard/announcements?view=templates"} variant="secondary">
+                {showTemplates ? dict.announcements.backToAnnouncements : dict.announcements.templates}
+              </LinkButton>
+              <LinkButton href="/dashboard/announcements/new">{dict.announcements.postAnnouncement}</LinkButton>
+            </>
+          ) : null
+        }
       />
 
+      {isAdmin ? (
+        <form className="mb-4 max-w-sm">
+          <input type="search" name="q" defaultValue={q} placeholder={dict.announcements.search} className={inputClasses} />
+        </form>
+      ) : null}
+
       {announcements.length === 0 ? (
-        <EmptyState title="No announcements yet" />
+        <EmptyState title={showTemplates ? dict.announcements.noTemplates : dict.announcements.noAnnouncements} />
       ) : (
         <div className="flex flex-col gap-4">
-          {announcements.map((announcement) => (
-            <Card key={announcement.id}>
-              <div className="flex flex-wrap items-baseline justify-between gap-3">
-                <p className="font-medium text-slate-900">{announcement.title}</p>
-                <p className="text-xs text-slate-500">
-                  {announcement.scope === "BUILDING" ? announcement.building?.name : "All buildings"}
-                </p>
-              </div>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{announcement.body}</p>
-              <p className="mt-3 text-xs text-slate-400">
-                Posted {announcement.publishedAt.toLocaleDateString()} by {announcement.postedBy.name}
-                {announcement.expiresAt ? ` · expires ${announcement.expiresAt.toLocaleDateString()}` : ""}
-              </p>
-              {isAdmin ? (
-                <div className="mt-3 flex items-center gap-3">
-                  <Link
-                    href={`/dashboard/announcements/${announcement.id}/edit`}
-                    className="text-sm font-medium text-blue-600 hover:underline"
-                  >
-                    Edit
-                  </Link>
-                  <form action={deleteAnnouncement.bind(null, announcement.id)}>
-                    <Button type="submit" variant="danger" size="sm">
-                      Delete
-                    </Button>
-                  </form>
+          {announcements.map((announcement) => {
+            const acknowledged = announcement.acknowledgments.length > 0;
+            return (
+              <Card key={announcement.id}>
+                <div className="flex flex-wrap items-baseline justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Link href={`/dashboard/announcements/${announcement.id}`} className="font-medium text-slate-900 hover:underline">
+                      {announcement.title}
+                    </Link>
+                    {announcement.status !== "SENT" ? <StatusBadge status={announcement.status} /> : null}
+                    {announcement.priority !== "NORMAL" ? <StatusBadge status={announcement.priority} /> : null}
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    {announcement.audience === "ALL_ORG" ? "All buildings" : announcement.audience.replace("_", " ")}
+                  </p>
                 </div>
-              ) : null}
-            </Card>
-          ))}
+                <div className="mt-2 text-sm text-slate-600" dangerouslySetInnerHTML={{ __html: announcement.body }} />
+                <p className="mt-3 text-xs text-slate-400">
+                  Posted {announcement.publishedAt.toLocaleDateString()} by {announcement.postedBy.name}
+                  {announcement.expiresAt ? ` · expires ${announcement.expiresAt.toLocaleDateString()}` : ""}
+                </p>
+                {!isAdmin && announcement.requireAcknowledgment ? (
+                  acknowledged ? (
+                    <Badge tone="success">{dict.announcements.acknowledged}</Badge>
+                  ) : (
+                    <form action={acknowledgeAnnouncement.bind(null, announcement.id)}>
+                      <Button type="submit" size="sm" className="mt-2">
+                        {dict.announcements.iveReadThis}
+                      </Button>
+                    </form>
+                  )
+                ) : null}
+                {isAdmin ? (
+                  <div className="mt-3 flex items-center gap-3">
+                    <Link href={`/dashboard/announcements/${announcement.id}`} className="text-sm font-medium text-blue-600 hover:underline">
+                      {dict.announcements.view}
+                    </Link>
+                    {announcement.status !== "SENT" ? (
+                      <Link
+                        href={`/dashboard/announcements/${announcement.id}/edit`}
+                        className="text-sm font-medium text-blue-600 hover:underline"
+                      >
+                        {dict.common.edit}
+                      </Link>
+                    ) : null}
+                    <Link
+                      href={`/dashboard/announcements/new?duplicateFrom=${announcement.id}`}
+                      className="text-sm font-medium text-blue-600 hover:underline"
+                    >
+                      {dict.announcements.duplicate}
+                    </Link>
+                    <form action={deleteAnnouncement.bind(null, announcement.id)}>
+                      <Button type="submit" variant="danger" size="sm">
+                        {dict.common.delete}
+                      </Button>
+                    </form>
+                  </div>
+                ) : null}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

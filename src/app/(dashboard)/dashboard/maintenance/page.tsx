@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import {
   EmptyState,
   LinkButton,
@@ -27,6 +28,7 @@ export default async function MaintenancePage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { user, organizationId, role } = await requireOrgScope();
+  const dict = await getDictionary();
   const status = parseStatusFilter((await searchParams).status);
 
   let unitIdFilter: { in: string[] } | undefined;
@@ -50,7 +52,10 @@ export default async function MaintenancePage({
 
   return (
     <div>
-      <PageHeader title="Maintenance" actions={<LinkButton href="/dashboard/maintenance/new">Report an issue</LinkButton>} />
+      <PageHeader
+        title={dict.maintenance.heading}
+        actions={<LinkButton href="/dashboard/maintenance/new">{dict.maintenance.reportIssue}</LinkButton>}
+      />
 
       {role !== "RESIDENT" ? (
         <nav className="mb-4 flex flex-wrap gap-2">
@@ -60,7 +65,7 @@ export default async function MaintenancePage({
               !status ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
-            All
+            {dict.maintenance.all}
           </Link>
           {STATUS_FILTERS.map((s) => (
             <Link
@@ -77,17 +82,17 @@ export default async function MaintenancePage({
       ) : null}
 
       {tickets.length === 0 ? (
-        <EmptyState title="No tickets yet" />
+        <EmptyState title={dict.maintenance.noTickets} />
       ) : (
         <div className={tableWrapClasses}>
           <table className={tableClasses}>
             <thead className={theadClasses}>
               <tr>
-                <th className={thClasses}>Title</th>
-                <th className={thClasses}>Status</th>
-                <th className={thClasses}>Priority</th>
-                <th className={thClasses}>Unit</th>
-                <th className={thClasses}>Assigned to</th>
+                <th className={thClasses}>{dict.maintenance.title}</th>
+                <th className={thClasses}>{dict.maintenance.status}</th>
+                <th className={thClasses}>{dict.maintenance.priority}</th>
+                <th className={thClasses}>{dict.maintenance.unit}</th>
+                <th className={thClasses}>{dict.maintenance.assignedTo}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

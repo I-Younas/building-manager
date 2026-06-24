@@ -3,49 +3,47 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { signupOrgAdmin } from "@/lib/actions/auth";
+import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
-export function SignupForm() {
+export function SignupForm({ dict }: { dict: Dictionary["auth"]["signup"] }) {
   const [state, formAction, pending] = useActionState(signupOrgAdmin, undefined);
 
   return (
     <form action={formAction} className={formStackClasses}>
-      <h1 className="text-xl font-semibold text-slate-900">Create your organization</h1>
+      <h1 className="text-xl font-semibold text-slate-900">{dict.title}</h1>
 
       <label className={labelClasses}>
-        Organization name
+        {dict.orgName}
         <input name="organizationName" required minLength={2} maxLength={100} className={inputClasses} />
       </label>
 
       <label className={labelClasses}>
-        Your name
+        {dict.yourName}
         <input name="name" required maxLength={100} className={inputClasses} />
       </label>
 
       <label className={labelClasses}>
-        Email
+        {dict.email}
         <input name="email" type="email" required className={inputClasses} />
       </label>
 
       <label className={labelClasses}>
-        Password
+        {dict.password}
         <input name="password" type="password" required minLength={8} className={inputClasses} />
       </label>
-      <p className="text-sm text-slate-500">
-        Already have an account with this email? Enter its existing password to create another organization under
-        it.
-      </p>
+      <p className="text-sm text-slate-500">{dict.alreadyHaveAccount}</p>
 
       {state?.error ? <ErrorText>{state.error}</ErrorText> : null}
 
       <Button type="submit" disabled={pending}>
-        {pending ? "Creating..." : "Create organization"}
+        {pending ? dict.creating : dict.createOrganization}
       </Button>
 
       <p className="text-sm text-slate-500">
-        Already have an account?{" "}
+        {dict.haveAccount}{" "}
         <Link href="/login" className="font-medium text-blue-600 hover:underline">
-          Log in
+          {dict.logIn}
         </Link>
       </p>
     </form>

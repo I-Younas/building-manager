@@ -14,6 +14,10 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@tiptap/pm": "^3.27.1",
+    "@tiptap/react": "^3.27.1",
+    "@tiptap/starter-kit": "^3.27.1",
+    "@vercel/blob": "^2.4.1",
     "bcrypt": "^6.0.0",
     "next": "16.2.9",
     "pg": "^8.22.0",
@@ -21,6 +25,7 @@
     "react-dom": "19.2.4",
     "resend": "^6.14.0",
     "server-only": "^0.0.1",
+    "svix": "^1.96.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
