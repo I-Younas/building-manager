@@ -4,21 +4,22 @@ import { prisma } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
 import { deleteAnnouncement, acknowledgeAnnouncement } from "@/lib/actions/announcements";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { formatDateTime } from "@/lib/format";
 import { Badge, Button, Card, EmptyState, LinkButton, PageHeader, StatusBadge, inputClasses } from "@/components/ui";
 
 export default async function AnnouncementsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; view?: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
   const { user, organizationId, role } = await requireOrgScope();
   const dict = await getDictionary();
   const isAdmin = role !== "RESIDENT";
-  const { q, view } = await searchParams;
-  const showTemplates = isAdmin && view === "templates";
+  const { q } = await searchParams;
 
   let unitIds: string[] = [];
   let buildingIds: string[] = [];
+  let floorKeys: string[] = [];
   if (!isAdmin) {
     const myUnits = await prisma.unitResident.findMany({
       where: { userId: user.id, unit: { organizationId } },
@@ -26,11 +27,13 @@ export default async function AnnouncementsPage({
     });
     unitIds = myUnits.map((link) => link.unitId);
     buildingIds = [...new Set(myUnits.map((link) => link.unit.buildingId))];
+    floorKeys = [
+      ...new Set(myUnits.filter((link) => link.unit.floor).map((link) => `${link.unit.buildingId}::${link.unit.floor}`)),
+    ];
   }
 
   const where: Prisma.AnnouncementWhereInput = {
     organizationId,
-    isTemplate: showTemplates,
     ...(q ? { OR: [{ title: { contains: q, mode: "insensitive" } }, { body: { contains: q, mode: "insensitive" } }] } : {}),
     ...(isAdmin
       ? {}
@@ -42,10 +45,10 @@ export default async function AnnouncementsPage({
                 { audience: "ALL_ORG" },
                 { audience: "BUILDINGS", targetBuildingIds: { hasSome: buildingIds } },
                 { audience: "UNITS", targetUnitIds: { hasSome: unitIds } },
+                { audience: "FLOORS", targetFloors: { hasSome: floorKeys } },
                 { recipientOverrides: { some: { userId: user.id, mode: "INCLUDE" } } },
               ],
             },
-            { NOT: { recipientOverrides: { some: { userId: user.id, mode: "EXCLUDE" } } } },
             { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
           ],
         }),
@@ -64,17 +67,8 @@ export default async function AnnouncementsPage({
   return (
     <div>
       <PageHeader
-        title={showTemplates ? dict.announcements.templates : dict.announcements.heading}
-        actions={
-          isAdmin ? (
-            <>
-              <LinkButton href={showTemplates ? "/dashboard/announcements" : "/dashboard/announcements?view=templates"} variant="secondary">
-                {showTemplates ? dict.announcements.backToAnnouncements : dict.announcements.templates}
-              </LinkButton>
-              <LinkButton href="/dashboard/announcements/new">{dict.announcements.postAnnouncement}</LinkButton>
-            </>
-          ) : null
-        }
+        title={dict.announcements.heading}
+        actions={isAdmin ? <LinkButton href="/dashboard/announcements/new">{dict.announcements.postAnnouncement}</LinkButton> : null}
       />
 
       {isAdmin ? (
@@ -84,7 +78,7 @@ export default async function AnnouncementsPage({
       ) : null}
 
       {announcements.length === 0 ? (
-        <EmptyState title={showTemplates ? dict.announcements.noTemplates : dict.announcements.noAnnouncements} />
+        <EmptyState title={dict.announcements.noAnnouncements} />
       ) : (
         <div className="flex flex-col gap-4">
           {announcements.map((announcement) => {
@@ -103,9 +97,12 @@ export default async function AnnouncementsPage({
                     {announcement.audience === "ALL_ORG" ? "All buildings" : announcement.audience.replace("_", " ")}
                   </p>
                 </div>
-                <div className="mt-2 text-sm text-slate-600" dangerouslySetInnerHTML={{ __html: announcement.body }} />
+                <div
+                  className="rich-text-content mt-2 text-sm text-slate-600"
+                  dangerouslySetInnerHTML={{ __html: announcement.body }}
+                />
                 <p className="mt-3 text-xs text-slate-400">
-                  Posted {announcement.publishedAt.toLocaleDateString()} by {announcement.postedBy.name}
+                  Posted {formatDateTime(announcement.publishedAt)} by {announcement.postedBy.name}
                   {announcement.expiresAt ? ` · expires ${announcement.expiresAt.toLocaleDateString()}` : ""}
                 </p>
                 {!isAdmin && announcement.requireAcknowledgment ? (

@@ -1,12 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
 import { generateInviteCode } from "@/lib/auth/crypto";
-import { createInviteSchema, redeemInviteSchema } from "@/lib/validation/invites";
+import { createInviteSchema, redeemInviteSchema, residentRegistrationSchema } from "@/lib/validation/invites";
 import { sendInviteEmail } from "@/lib/email";
 
 const INVITE_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -23,7 +24,6 @@ export async function createInviteCode(
     role: formData.get("role"),
     buildingName: formData.get("buildingName") ?? undefined,
     unitNumber: formData.get("unitNumber") ?? undefined,
-    relationship: formData.get("relationship") ?? undefined,
     email: formData.get("email"),
   });
   if (!parsed.success) {
@@ -32,11 +32,10 @@ export async function createInviteCode(
 
   const { role, email } = parsed.data;
   let unitId: string | null = null;
-  let relationship: "OWNER" | "TENANT" | "FAMILY_MEMBER" | "OTHER" | null = null;
 
   if (role === "RESIDENT") {
-    if (!parsed.data.buildingName || !parsed.data.unitNumber || !parsed.data.relationship) {
-      return { error: "Enter a building, a unit number, and choose a relationship for a resident invite." };
+    if (!parsed.data.buildingName || !parsed.data.unitNumber) {
+      return { error: "Enter a building and a unit number for a resident invite." };
     }
 
     let building = await prisma.building.findFirst({
@@ -60,7 +59,6 @@ export async function createInviteCode(
       update: {},
     });
     unitId = unit.id;
-    relationship = parsed.data.relationship;
   }
 
   const code = generateInviteCode();
@@ -73,7 +71,6 @@ export async function createInviteCode(
       code,
       role,
       unitId,
-      relationship,
       email,
       createdById: user.id,
       expiresAt: new Date(Date.now() + INVITE_DURATION_MS),
@@ -103,6 +100,11 @@ export async function redeemInvite(
   _prevState: RedeemInviteState,
   formData: FormData,
 ): Promise<RedeemInviteState> {
+  const invite = await prisma.inviteCode.findUnique({ where: { code } });
+  if (!invite || invite.usedAt || invite.expiresAt < new Date()) {
+    return { error: "This invite link is invalid or has expired." };
+  }
+
   const parsed = redeemInviteSchema.safeParse({
     firstName: formData.get("firstName"),
     lastName: formData.get("lastName"),
@@ -113,13 +115,22 @@ export async function redeemInvite(
     return { error: parsed.error.issues[0]?.message ?? "Please check the form and try again." };
   }
 
+  let residentDetails: z.infer<typeof residentRegistrationSchema> | null = null;
+  if (invite.role === "RESIDENT") {
+    const residentParsed = residentRegistrationSchema.safeParse({
+      phone: formData.get("phone"),
+      dateOfBirth: formData.get("dateOfBirth"),
+      emergencyContactName: formData.get("emergencyContactName"),
+      emergencyContactPhone: formData.get("emergencyContactPhone"),
+    });
+    if (!residentParsed.success) {
+      return { error: residentParsed.error.issues[0]?.message ?? "Please check the form and try again." };
+    }
+    residentDetails = residentParsed.data;
+  }
+
   const { firstName, lastName, email, password } = parsed.data;
   const name = `${firstName} ${lastName}`;
-
-  const invite = await prisma.inviteCode.findUnique({ where: { code } });
-  if (!invite || invite.usedAt || invite.expiresAt < new Date()) {
-    return { error: "This invite link is invalid or has expired." };
-  }
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
 
@@ -137,7 +148,17 @@ export async function redeemInvite(
     userId = existingUser.id;
   } else {
     const passwordHash = await hashPassword(password);
-    const user = await prisma.user.create({ data: { name, email, passwordHash } });
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        passwordHash,
+        phone: residentDetails?.phone,
+        dateOfBirth: residentDetails ? new Date(residentDetails.dateOfBirth) : undefined,
+        emergencyContactName: residentDetails?.emergencyContactName,
+        emergencyContactPhone: residentDetails?.emergencyContactPhone,
+      },
+    });
     userId = user.id;
   }
 
@@ -153,13 +174,9 @@ export async function redeemInvite(
       data: { userId, organizationId: invite.organizationId, role: invite.role },
     });
 
-    if (invite.role === "RESIDENT" && invite.unitId && invite.relationship) {
+    if (invite.role === "RESIDENT" && invite.unitId) {
       await tx.unitResident.create({
-        data: {
-          unitId: invite.unitId,
-          userId,
-          relationship: invite.relationship,
-        },
+        data: { unitId: invite.unitId, userId },
       });
     }
 

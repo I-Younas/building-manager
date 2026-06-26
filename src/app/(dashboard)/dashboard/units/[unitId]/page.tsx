@@ -50,7 +50,8 @@ export default async function UnitDetailPage({
               <div>
                 <p className="font-medium text-slate-900">{link.user.name}</p>
                 <p className="text-sm text-slate-500">
-                  {link.user.email} · {link.relationship.replace("_", " ")}
+                  {link.user.email}
+                  {link.relationship ? ` · ${link.relationship.replace("_", " ")}` : ""}
                   {link.isPrimary ? " · primary" : ""}
                 </p>
               </div>

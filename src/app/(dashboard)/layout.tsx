@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { logout, switchActiveOrganization } from "@/lib/actions/auth";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { IdleSessionMonitor } from "@/components/idle-session-monitor";
 import { getDictionary, getLocale } from "@/lib/i18n/get-dictionary";
 import { Badge, Button } from "@/components/ui";
 
@@ -24,6 +26,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     { href: "/dashboard/maintenance", label: dict.nav.maintenance },
     { href: "/dashboard/billing/invoices", label: dict.nav.payments },
     { href: "/dashboard/announcements", label: dict.nav.announcements },
+    { href: "/dashboard/account", label: dict.nav.account },
   ];
   const navItemsAdmin = [
     { href: "/dashboard/buildings", label: dict.nav.buildings },
@@ -33,6 +36,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <div className="flex min-h-screen">
+      <IdleSessionMonitor dict={dict.session} />
       <aside className="flex w-64 flex-shrink-0 flex-col bg-slate-900 py-6">
         <div className="mb-6 px-6">
           <p className="text-sm font-semibold uppercase tracking-wide text-blue-400">Building Manager</p>
@@ -69,7 +73,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
           <div className="flex items-center gap-4">
             <LocaleSwitcher locale={locale} />
-            <span className="text-sm text-slate-600">{user.name}</span>
+            <Link href="/dashboard/account" className="text-sm text-slate-600 hover:text-slate-900 hover:underline">
+              {user.name}
+            </Link>
             <form action={logout}>
               <Button type="submit" variant="secondary" size="sm">
                 {dict.nav.logout}

@@ -6,6 +6,7 @@
     "announcements": "Annonces",
     "buildings": "Immeubles",
     "residents": "Résidents",
+    "account": "Mon compte",
     "logout": "Se déconnecter",
     "switchOrg": "Changer d'organisation"
   },
@@ -15,6 +16,12 @@
     "subtitle": "Entretien, paiements et annonces — tout ce dont un immeuble petit ou moyen a besoin, au même endroit.",
     "getStarted": "Commencer",
     "logIn": "Se connecter"
+  },
+  "session": {
+    "title": "Êtes-vous toujours là ?",
+    "body": "Pour votre sécurité, nous fermons automatiquement les sessions inactives. Votre session se terminera bientôt, sauf si vous souhaitez rester connecté.",
+    "countdown": "Déconnexion dans {seconds} secondes...",
+    "stayButton": "Rester connecté"
   },
   "auth": {
     "login": {
@@ -46,10 +53,10 @@
     "signup": {
       "title": "Créez votre organisation",
       "orgName": "Nom de l'organisation",
-      "yourName": "Votre nom",
+      "firstName": "Prénom",
+      "lastName": "Nom de famille",
       "email": "Courriel",
       "password": "Mot de passe",
-      "alreadyHaveAccount": "Vous avez déjà un compte avec ce courriel ? Entrez son mot de passe existant pour créer une autre organisation sous celui-ci.",
       "createOrganization": "Créer l'organisation",
       "creating": "Création en cours...",
       "haveAccount": "Vous avez déjà un compte ?",
@@ -62,8 +69,11 @@
       "firstName": "Prénom",
       "lastName": "Nom de famille",
       "email": "Courriel",
+      "phone": "Numéro de téléphone",
+      "dateOfBirth": "Date de naissance",
+      "emergencyContactName": "Nom du contact d'urgence",
+      "emergencyContactPhone": "Téléphone du contact d'urgence",
       "password": "Mot de passe",
-      "helperText": "Si vous avez déjà un compte avec ce courriel, entrez son mot de passe existant pour le rejoindre. Sinon, ce mot de passe créera votre nouveau compte.",
       "join": "Rejoindre",
       "joining": "Adhésion en cours...",
       "expiredTitle": "Invitation invalide",
@@ -75,6 +85,15 @@
     "delete": "Supprimer",
     "save": "Enregistrer",
     "cancel": "Annuler"
+  },
+  "account": {
+    "heading": "Mon compte",
+    "description": "Gardez vos coordonnées à jour.",
+    "email": "Courriel",
+    "phone": "Numéro de téléphone",
+    "save": "Enregistrer les modifications",
+    "saving": "Enregistrement...",
+    "success": "Vos coordonnées ont été mises à jour."
   },
   "dashboard": {
     "welcome": "Bienvenue, {name}",
@@ -106,12 +125,9 @@
   },
   "announcements": {
     "heading": "Annonces",
-    "templates": "Modèles",
-    "backToAnnouncements": "Retour aux annonces",
     "postAnnouncement": "Publier une annonce",
     "search": "Rechercher des annonces...",
     "noAnnouncements": "Aucune annonce pour le moment",
-    "noTemplates": "Aucun modèle pour le moment",
     "view": "Voir",
     "duplicate": "Dupliquer",
     "iveReadThis": "J'ai lu ceci",
@@ -122,6 +138,8 @@
     "addBuilding": "Ajouter un immeuble",
     "building": "Immeuble",
     "units": "Unités",
+    "rentedUnits": "Unités louées",
+    "vacantUnits": "Unités vacantes",
     "noBuildings": "Aucun immeuble pour le moment",
     "noBuildingsDescription": "Ajoutez votre premier immeuble pour commencer.",
     "noUnits": "Aucune unité pour le moment",

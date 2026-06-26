@@ -26,7 +26,8 @@ export function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class: "min-h-[150px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none",
+        class:
+          "rich-text-content min-h-[150px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none",
       },
     },
   });

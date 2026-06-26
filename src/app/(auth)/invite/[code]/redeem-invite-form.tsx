@@ -3,13 +3,16 @@
 import { useActionState } from "react";
 import { redeemInvite } from "@/lib/actions/invites";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
+import { DatePicker } from "@/components/date-picker";
 import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
 export function RedeemInviteForm({
   code,
+  isResident,
   dict,
 }: {
   code: string;
+  isResident: boolean;
   dict: Dictionary["auth"]["invite"];
 }) {
   const [state, formAction, pending] = useActionState(redeemInvite.bind(null, code), undefined);
@@ -36,7 +39,29 @@ export function RedeemInviteForm({
         {dict.password}
         <input name="password" type="password" required minLength={8} className={inputClasses} />
       </label>
-      <p className="text-sm text-slate-500">{dict.helperText}</p>
+
+      {isResident ? (
+        <>
+          <label className={labelClasses}>
+            {dict.phone}
+            <input name="phone" type="tel" required maxLength={30} className={inputClasses} />
+          </label>
+
+          <label className={labelClasses}>
+            {dict.dateOfBirth}
+            <DatePicker name="dateOfBirth" />
+          </label>
+
+          <label className={labelClasses}>
+            {dict.emergencyContactName}
+            <input name="emergencyContactName" required maxLength={100} className={inputClasses} />
+          </label>
+          <label className={labelClasses}>
+            {dict.emergencyContactPhone}
+            <input name="emergencyContactPhone" type="tel" required maxLength={30} className={inputClasses} />
+          </label>
+        </>
+      ) : null}
 
       {state?.error ? <ErrorText>{state.error}</ErrorText> : null}
 

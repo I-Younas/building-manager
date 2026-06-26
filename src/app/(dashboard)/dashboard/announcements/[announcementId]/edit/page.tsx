@@ -31,6 +31,11 @@ export default async function EditAnnouncementPage({
   });
   const units = unitRows.map((u) => ({ id: u.id, unitNumber: u.unitNumber, buildingId: u.buildingId, buildingName: u.building.name }));
 
+  const floorsSeen = new Set<string>();
+  const floors = unitRows
+    .filter((u) => u.floor !== null && (floorsSeen.has(`${u.buildingId}::${u.floor}`) ? false : (floorsSeen.add(`${u.buildingId}::${u.floor}`), true)))
+    .map((u) => ({ key: `${u.buildingId}::${u.floor}`, label: `${u.building.name} — Floor ${u.floor}` }));
+
   const unitLinks = await prisma.unitResident.findMany({
     where: { unit: { organizationId } },
     include: { user: true, unit: true },
@@ -38,7 +43,14 @@ export default async function EditAnnouncementPage({
   const seen = new Set<string>();
   const residents = unitLinks
     .filter((l) => (seen.has(l.userId) ? false : (seen.add(l.userId), true)))
-    .map((l) => ({ userId: l.userId, name: l.user.name, email: l.user.email, buildingId: l.unit.buildingId, unitId: l.unitId }));
+    .map((l) => ({
+      userId: l.userId,
+      name: l.user.name,
+      email: l.user.email,
+      buildingId: l.unit.buildingId,
+      unitId: l.unitId,
+      floor: l.unit.floor,
+    }));
 
   const defaultValues: AnnouncementDefaultValues = {
     title: announcement.title,
@@ -48,8 +60,8 @@ export default async function EditAnnouncementPage({
     audience: announcement.audience,
     targetBuildingIds: announcement.targetBuildingIds,
     targetUnitIds: announcement.targetUnitIds,
+    targetFloors: announcement.targetFloors,
     includeUserIds: announcement.recipientOverrides.filter((o) => o.mode === "INCLUDE").map((o) => o.userId),
-    excludeUserIds: announcement.recipientOverrides.filter((o) => o.mode === "EXCLUDE").map((o) => o.userId),
     expiresAt: announcement.expiresAt,
     allowReplies: announcement.allowReplies,
     requireAcknowledgment: announcement.requireAcknowledgment,
@@ -57,17 +69,17 @@ export default async function EditAnnouncementPage({
     scheduledAt: announcement.scheduledAt,
     recurrence: announcement.recurrence,
     recurrenceEndsAt: announcement.recurrenceEndsAt,
-    isTemplate: announcement.isTemplate,
     correctsAnnouncementId: announcement.correctsAnnouncementId,
   };
 
   return (
     <div>
-      <PageHeader title={announcement.isTemplate ? "Edit template" : "Edit announcement"} />
+      <PageHeader title="Edit announcement" />
       <AnnouncementForm
         action={updateAnnouncement.bind(null, announcementId)}
         buildings={buildings}
         units={units}
+        floors={floors}
         residents={residents}
         defaultValues={defaultValues}
         submitLabel="Save changes"

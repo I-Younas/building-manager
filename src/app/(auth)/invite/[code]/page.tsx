@@ -39,7 +39,7 @@ export default async function InvitePage({
         {invite.unit ? ` of Unit ${invite.unit.unitNumber}, ${invite.unit.building.name}` : ""}.
       </p>
       <div className="mt-6">
-        <RedeemInviteForm code={code} dict={dict.auth.invite} />
+        <RedeemInviteForm code={code} isResident={invite.role === "RESIDENT"} dict={dict.auth.invite} />
       </div>
     </div>
   );

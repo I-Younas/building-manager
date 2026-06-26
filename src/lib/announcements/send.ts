@@ -32,7 +32,16 @@ export function buildAnnouncementHtml(announcement: {
     ? "<p style=\"color:#64748b;font-size:12px\">You can reply directly to this email.</p>"
     : "<p style=\"color:#64748b;font-size:12px\">This is a broadcast-only message; replies are not monitored.</p>";
 
-  return `<p style="color:#64748b;font-size:12px;text-transform:uppercase">${CATEGORY_LABEL[announcement.category] ?? "General notice"}</p>${announcement.body}${replyNote}`;
+  const style = `
+    <style>
+      ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.75em; }
+      ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 0.75em; }
+      li { margin-bottom: 0.25em; }
+      p { margin-bottom: 0.75em; }
+    </style>
+  `;
+
+  return `${style}<p style="color:#64748b;font-size:12px;text-transform:uppercase">${CATEGORY_LABEL[announcement.category] ?? "General notice"}</p>${announcement.body}${replyNote}`;
 }
 
 export async function sendAnnouncementNow(announcementId: string) {

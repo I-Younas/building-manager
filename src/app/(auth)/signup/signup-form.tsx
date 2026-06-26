@@ -18,10 +18,16 @@ export function SignupForm({ dict }: { dict: Dictionary["auth"]["signup"] }) {
         <input name="organizationName" required minLength={2} maxLength={100} className={inputClasses} />
       </label>
 
-      <label className={labelClasses}>
-        {dict.yourName}
-        <input name="name" required maxLength={100} className={inputClasses} />
-      </label>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className={labelClasses}>
+          {dict.firstName}
+          <input name="firstName" required maxLength={50} className={inputClasses} />
+        </label>
+        <label className={labelClasses}>
+          {dict.lastName}
+          <input name="lastName" required maxLength={50} className={inputClasses} />
+        </label>
+      </div>
 
       <label className={labelClasses}>
         {dict.email}
@@ -32,7 +38,6 @@ export function SignupForm({ dict }: { dict: Dictionary["auth"]["signup"] }) {
         {dict.password}
         <input name="password" type="password" required minLength={8} className={inputClasses} />
       </label>
-      <p className="text-sm text-slate-500">{dict.alreadyHaveAccount}</p>
 
       {state?.error ? <ErrorText>{state.error}</ErrorText> : null}
 

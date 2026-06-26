@@ -81,6 +81,41 @@ export async function sendAnnouncementEmail({
   return { messageId: data?.id ?? null };
 }
 
+export async function sendContactInfoChangedEmail({
+  to,
+  residentName,
+  emailChange,
+  phoneChange,
+}: {
+  to: string;
+  residentName: string;
+  emailChange?: { from: string; to: string };
+  phoneChange?: { from: string | null; to: string };
+}) {
+  const from = process.env.EMAIL_FROM;
+  if (!from) {
+    throw new Error("EMAIL_FROM is not configured.");
+  }
+
+  const lines: string[] = [];
+  if (emailChange) lines.push(`Email: ${emailChange.from} → ${emailChange.to}`);
+  if (phoneChange) lines.push(`Phone: ${phoneChange.from ?? "(none)"} → ${phoneChange.to}`);
+
+  const { error } = await getClient().emails.send({
+    from,
+    to,
+    subject: `${residentName} updated their contact information`,
+    text: `${residentName} updated their contact information on Building Manager:\n\n${lines.join("\n")}`,
+    html: `<p><strong>${residentName}</strong> updated their contact information on Building Manager:</p><ul>${lines
+      .map((line) => `<li>${line}</li>`)
+      .join("")}</ul>`,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function sendPasswordResetEmail({ to, resetUrl }: { to: string; resetUrl: string }) {
   const from = process.env.EMAIL_FROM;
   if (!from) {

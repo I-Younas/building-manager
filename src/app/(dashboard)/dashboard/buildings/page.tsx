@@ -10,7 +10,7 @@ export default async function BuildingsPage() {
 
   const buildings = await prisma.building.findMany({
     where: { organizationId },
-    include: { _count: { select: { units: true } } },
+    include: { units: { include: { _count: { select: { residentLinks: true } } } } },
     orderBy: { createdAt: "asc" },
   });
 
@@ -29,20 +29,26 @@ export default async function BuildingsPage() {
             <thead className={theadClasses}>
               <tr>
                 <th className={thClasses}>{dict.buildings.building}</th>
-                <th className={thClasses}>{dict.buildings.units}</th>
+                <th className={thClasses}>{dict.buildings.rentedUnits}</th>
+                <th className={thClasses}>{dict.buildings.vacantUnits}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {buildings.map((building) => (
-                <tr key={building.id} className={trClasses}>
-                  <td className={tdClasses}>
-                    <Link href={`/dashboard/buildings/${building.id}`} className="font-medium text-blue-600 hover:underline">
-                      {building.name}
-                    </Link>
-                  </td>
-                  <td className={tdClasses}>{building._count.units}</td>
-                </tr>
-              ))}
+              {buildings.map((building) => {
+                const rented = building.units.filter((u) => u._count.residentLinks > 0).length;
+                const vacant = building.units.length - rented;
+                return (
+                  <tr key={building.id} className={trClasses}>
+                    <td className={tdClasses}>
+                      <Link href={`/dashboard/buildings/${building.id}`} className="font-medium text-blue-600 hover:underline">
+                        {building.name}
+                      </Link>
+                    </td>
+                    <td className={tdClasses}>{rented}</td>
+                    <td className={tdClasses}>{vacant}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

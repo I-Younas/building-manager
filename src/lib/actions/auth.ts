@@ -38,7 +38,8 @@ export async function signupOrgAdmin(
 ): Promise<AuthActionState> {
   const parsed = signupSchema.safeParse({
     organizationName: formData.get("organizationName"),
-    name: formData.get("name"),
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
     email: formData.get("email"),
     password: formData.get("password"),
   });
@@ -47,7 +48,8 @@ export async function signupOrgAdmin(
     return { error: parsed.error.issues[0]?.message ?? "Please check the form and try again." };
   }
 
-  const { organizationName, name, email, password } = parsed.data;
+  const { organizationName, firstName, lastName, email, password } = parsed.data;
+  const name = `${firstName} ${lastName}`;
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {

@@ -60,6 +60,7 @@ enum AnnouncementAudience {
   ALL_ORG
   BUILDINGS
   UNITS
+  FLOORS
   INDIVIDUALS
 }
 
@@ -107,13 +108,17 @@ enum AnnouncementDeliveryStatus {
 // ---------- Global identity ----------
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  passwordHash          String
+  name                  String
+  phone                 String?
+  dateOfBirth           DateTime?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   memberships                    OrgMembership[]
   sessions                       Session[]
@@ -231,12 +236,12 @@ model Unit {
 }
 
 model UnitResident {
-  id           String                   @id @default(cuid())
+  id           String                    @id @default(cuid())
   unitId       String
   userId       String
-  relationship UnitResidentRelationship
-  isPrimary    Boolean                  @default(false)
-  createdAt    DateTime                 @default(now())
+  relationship UnitResidentRelationship?
+  isPrimary    Boolean                   @default(false)
+  createdAt    DateTime                  @default(now())
 
   unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -395,6 +400,7 @@ model Announcement {
   audience                   AnnouncementAudience   @default(ALL_ORG)
   targetBuildingIds          String[]               @default([])
   targetUnitIds              String[]               @default([])
+  targetFloors               String[]               @default([])
   category                   AnnouncementCategory   @default(GENERAL)
   priority                   AnnouncementPriority   @default(NORMAL)
   status                     AnnouncementStatus     @default(SENT)
@@ -405,7 +411,6 @@ model Announcement {
   allowReplies               Boolean                @default(false)
   requireAcknowledgment      Boolean                @default(false)
   acknowledgmentReminderDays Int?
-  isTemplate                 Boolean                @default(false)
   correctsAnnouncementId     String?
 
   organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)

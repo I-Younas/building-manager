@@ -59,7 +59,7 @@ export default async function AnnouncementDetailPage({
       />
 
       <Card className="mb-8">
-        <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: announcement.body }} />
+        <div className="rich-text-content text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: announcement.body }} />
         {announcement.attachments.length > 0 ? (
           <ul className="mt-4 flex flex-col gap-1">
             {announcement.attachments.map((a) => (

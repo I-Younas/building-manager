@@ -21,11 +21,11 @@ type ParsedAnnouncement = {
   body: string;
   category: "GENERAL" | "MAINTENANCE" | "EMERGENCY" | "POLICY" | "EVENT" | "BILLING" | "AMENITY";
   priority: "NORMAL" | "IMPORTANT" | "URGENT";
-  audience: "ALL_ORG" | "BUILDINGS" | "UNITS" | "INDIVIDUALS";
+  audience: "ALL_ORG" | "BUILDINGS" | "UNITS" | "FLOORS" | "INDIVIDUALS";
   targetBuildingIds: string[];
   targetUnitIds: string[];
+  targetFloors: string[];
   includeUserIds: string[];
-  excludeUserIds: string[];
   expiresAt: Date | null;
   allowReplies: boolean;
   requireAcknowledgment: boolean;
@@ -35,7 +35,6 @@ type ParsedAnnouncement = {
   recurrence: "NONE" | "WEEKLY" | "MONTHLY";
   recurrenceEndsAt: Date | null;
   nextRunAt: Date | null;
-  isTemplate: boolean;
 };
 
 type ParseResult = { error: string } | { data: ParsedAnnouncement };
@@ -56,8 +55,8 @@ async function parseAnnouncementForm(formData: FormData, organizationId: string)
     audience: formData.get("audience"),
     targetBuildingIds: formData.getAll("targetBuildingIds"),
     targetUnitIds: formData.getAll("targetUnitIds"),
+    targetFloors: formData.getAll("targetFloors"),
     includeUserIds: formData.getAll("includeUserIds"),
-    excludeUserIds: formData.getAll("excludeUserIds"),
     expiresAt: formData.get("expiresAt") ?? undefined,
     allowReplies: formData.get("allowReplies") === "on",
     requireAcknowledgment: formData.get("requireAcknowledgment") === "on",
@@ -66,7 +65,6 @@ async function parseAnnouncementForm(formData: FormData, organizationId: string)
     scheduledAt: formData.get("scheduledAt") ?? undefined,
     recurrence: formData.get("recurrence") ?? "NONE",
     recurrenceEndsAt: formData.get("recurrenceEndsAt") ?? undefined,
-    isTemplate: formData.get("isTemplate") === "on",
   });
 
   if (!parsed.success) {
@@ -95,6 +93,25 @@ async function parseAnnouncementForm(formData: FormData, organizationId: string)
     });
     if (count !== data.targetUnitIds.length) {
       return { error: "One or more selected units were not found." };
+    }
+  }
+
+  if (data.audience === "FLOORS") {
+    if (data.targetFloors.length === 0) {
+      return { error: "Select at least one floor." };
+    }
+    const pairs = data.targetFloors.map((f) => {
+      const [buildingId, floor] = f.split("::");
+      return { buildingId, floor };
+    });
+    const matchingUnits = await prisma.unit.findMany({
+      where: { organizationId, OR: pairs.map((p) => ({ buildingId: p.buildingId, floor: p.floor })) },
+      select: { buildingId: true, floor: true },
+    });
+    const foundKeys = new Set(matchingUnits.map((u) => `${u.buildingId}::${u.floor}`));
+    const allFound = pairs.every((p) => foundKeys.has(`${p.buildingId}::${p.floor}`));
+    if (!allFound) {
+      return { error: "One or more selected floors were not found." };
     }
   }
 
@@ -144,8 +161,8 @@ async function parseAnnouncementForm(formData: FormData, organizationId: string)
       audience: data.audience,
       targetBuildingIds: data.audience === "BUILDINGS" ? data.targetBuildingIds : [],
       targetUnitIds: data.audience === "UNITS" ? data.targetUnitIds : [],
-      includeUserIds: data.includeUserIds,
-      excludeUserIds: data.excludeUserIds,
+      targetFloors: data.audience === "FLOORS" ? data.targetFloors : [],
+      includeUserIds: data.audience === "INDIVIDUALS" ? data.includeUserIds : [],
       expiresAt,
       allowReplies: data.allowReplies,
       requireAcknowledgment: data.requireAcknowledgment,
@@ -155,19 +172,17 @@ async function parseAnnouncementForm(formData: FormData, organizationId: string)
       recurrence: data.recurrence,
       recurrenceEndsAt,
       nextRunAt,
-      isTemplate: data.isTemplate,
     },
   };
 }
 
-async function saveRecipientOverrides(announcementId: string, includeUserIds: string[], excludeUserIds: string[]) {
+async function saveRecipientOverrides(announcementId: string, includeUserIds: string[]) {
   await prisma.announcementRecipientOverride.deleteMany({ where: { announcementId } });
-  const rows = [
-    ...includeUserIds.map((userId) => ({ announcementId, userId, mode: "INCLUDE" as const })),
-    ...excludeUserIds.map((userId) => ({ announcementId, userId, mode: "EXCLUDE" as const })),
-  ];
-  if (rows.length > 0) {
-    await prisma.announcementRecipientOverride.createMany({ data: rows, skipDuplicates: true });
+  if (includeUserIds.length > 0) {
+    await prisma.announcementRecipientOverride.createMany({
+      data: includeUserIds.map((userId) => ({ announcementId, userId, mode: "INCLUDE" as const })),
+      skipDuplicates: true,
+    });
   }
 }
 
@@ -197,7 +212,7 @@ export async function createAnnouncement(
   if ("error" in result) return { error: result.error };
 
   const correctsAnnouncementId = (formData.get("correctsAnnouncementId") as string | null) || null;
-  const { includeUserIds, excludeUserIds, ...announcementData } = result.data;
+  const { includeUserIds, ...announcementData } = result.data;
 
   const announcement = await prisma.announcement.create({
     data: {
@@ -208,10 +223,10 @@ export async function createAnnouncement(
     },
   });
 
-  await saveRecipientOverrides(announcement.id, includeUserIds, excludeUserIds);
+  await saveRecipientOverrides(announcement.id, includeUserIds);
   await saveAttachments(announcement.id, formData);
 
-  if (announcementData.status === "SENT" && !announcementData.isTemplate) {
+  if (announcementData.status === "SENT") {
     await sendAnnouncementNow(announcement.id);
   }
 
@@ -234,13 +249,13 @@ export async function updateAnnouncement(
   const result = await parseAnnouncementForm(formData, organizationId);
   if ("error" in result) return { error: result.error };
 
-  const { includeUserIds, excludeUserIds, ...announcementData } = result.data;
+  const { includeUserIds, ...announcementData } = result.data;
 
   await prisma.announcement.update({ where: { id: announcementId }, data: announcementData });
-  await saveRecipientOverrides(announcementId, includeUserIds, excludeUserIds);
+  await saveRecipientOverrides(announcementId, includeUserIds);
   await saveAttachments(announcementId, formData);
 
-  if (announcementData.status === "SENT" && !announcementData.isTemplate) {
+  if (announcementData.status === "SENT") {
     await sendAnnouncementNow(announcementId);
   }
 

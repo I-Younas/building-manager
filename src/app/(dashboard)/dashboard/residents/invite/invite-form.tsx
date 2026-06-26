@@ -62,16 +62,6 @@ export function InviteForm({
           <p className="text-xs text-slate-500">
             If this building or unit doesn&apos;t exist yet, it will be created automatically.
           </p>
-
-          <label className={labelClasses}>
-            Relationship
-            <select name="relationship" required defaultValue="OWNER" className={inputClasses}>
-              <option value="OWNER">Owner</option>
-              <option value="TENANT">Tenant</option>
-              <option value="FAMILY_MEMBER">Family member</option>
-              <option value="OTHER">Other</option>
-            </select>
-          </label>
         </>
       ) : null}
 

@@ -2,6 +2,7 @@ import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
 import { getDictionary, formatMessage } from "@/lib/i18n/get-dictionary";
+import { formatDateTime } from "@/lib/format";
 import { Card, EmptyState, PageHeader } from "@/components/ui";
 
 export default async function DashboardPage() {
@@ -11,6 +12,7 @@ export default async function DashboardPage() {
 
   let unitIds: string[] = [];
   let buildingIds: string[] = [];
+  let floorKeys: string[] = [];
   if (!isAdmin) {
     const myUnits = await prisma.unitResident.findMany({
       where: { userId: user.id, unit: { organizationId } },
@@ -18,12 +20,14 @@ export default async function DashboardPage() {
     });
     unitIds = myUnits.map((link) => link.unitId);
     buildingIds = [...new Set(myUnits.map((link) => link.unit.buildingId))];
+    floorKeys = [
+      ...new Set(myUnits.filter((link) => link.unit.floor).map((link) => `${link.unit.buildingId}::${link.unit.floor}`)),
+    ];
   }
 
   const announcements = await prisma.announcement.findMany({
     where: {
       organizationId,
-      isTemplate: false,
       ...(isAdmin
         ? {}
         : {
@@ -34,10 +38,10 @@ export default async function DashboardPage() {
                   { audience: "ALL_ORG" },
                   { audience: "BUILDINGS", targetBuildingIds: { hasSome: buildingIds } },
                   { audience: "UNITS", targetUnitIds: { hasSome: unitIds } },
+                  { audience: "FLOORS", targetFloors: { hasSome: floorKeys } },
                   { recipientOverrides: { some: { userId: user.id, mode: "INCLUDE" } } },
                 ],
               },
-              { NOT: { recipientOverrides: { some: { userId: user.id, mode: "EXCLUDE" } } } },
               { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
             ],
           }),
@@ -97,9 +101,12 @@ export default async function DashboardPage() {
                   {announcement.audience === "ALL_ORG" ? "All buildings" : announcement.audience.replace("_", " ")}
                 </p>
               </div>
-              <div className="mt-2 text-sm text-slate-600" dangerouslySetInnerHTML={{ __html: announcement.body }} />
+              <div
+                className="rich-text-content mt-2 text-sm text-slate-600"
+                dangerouslySetInnerHTML={{ __html: announcement.body }}
+              />
               <p className="mt-3 text-xs text-slate-400">
-                Posted {announcement.publishedAt.toLocaleDateString()}
+                Posted {formatDateTime(announcement.publishedAt)}
               </p>
             </Card>
           ))}

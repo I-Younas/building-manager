@@ -15,7 +15,8 @@ import {
 type Action = (state: FormActionState, formData: FormData) => Promise<FormActionState>;
 type Building = { id: string; name: string };
 type Unit = { id: string; unitNumber: string; buildingId: string; buildingName: string };
-type Resident = { userId: string; name: string; email: string; buildingId: string; unitId: string };
+type Floor = { key: string; label: string };
+type Resident = { userId: string; name: string; email: string; buildingId: string; unitId: string; floor: string | null };
 
 const CATEGORY_OPTIONS = [
   { value: "GENERAL", label: "General notice", suggestedPriority: "NORMAL" },
@@ -35,8 +36,8 @@ export type AnnouncementDefaultValues = {
   audience: string;
   targetBuildingIds: string[];
   targetUnitIds: string[];
+  targetFloors: string[];
   includeUserIds: string[];
-  excludeUserIds: string[];
   expiresAt: Date | null;
   allowReplies: boolean;
   requireAcknowledgment: boolean;
@@ -44,7 +45,6 @@ export type AnnouncementDefaultValues = {
   scheduledAt: Date | null;
   recurrence: string;
   recurrenceEndsAt: Date | null;
-  isTemplate: boolean;
   correctsAnnouncementId?: string | null;
 };
 
@@ -52,6 +52,7 @@ export function AnnouncementForm({
   action,
   buildings,
   units,
+  floors,
   residents,
   defaultValues,
   submitLabel,
@@ -59,6 +60,7 @@ export function AnnouncementForm({
   action: Action;
   buildings: Building[];
   units: Unit[];
+  floors: Floor[];
   residents: Resident[];
   defaultValues?: AnnouncementDefaultValues;
   submitLabel: string;
@@ -70,8 +72,8 @@ export function AnnouncementForm({
   const [audience, setAudience] = useState(defaultValues?.audience ?? "ALL_ORG");
   const [targetBuildingIds, setTargetBuildingIds] = useState<string[]>(defaultValues?.targetBuildingIds ?? []);
   const [targetUnitIds, setTargetUnitIds] = useState<string[]>(defaultValues?.targetUnitIds ?? []);
+  const [targetFloors, setTargetFloors] = useState<string[]>(defaultValues?.targetFloors ?? []);
   const [includeUserIds, setIncludeUserIds] = useState<string[]>(defaultValues?.includeUserIds ?? []);
-  const [excludeUserIds, setExcludeUserIds] = useState<string[]>(defaultValues?.excludeUserIds ?? []);
   const [requireAcknowledgment, setRequireAcknowledgment] = useState(defaultValues?.requireAcknowledgment ?? false);
   const [sendTiming, setSendTiming] = useState<"NOW" | "SCHEDULE" | "DRAFT">("NOW");
   const [recurrence, setRecurrence] = useState(defaultValues?.recurrence ?? "NONE");
@@ -90,12 +92,12 @@ export function AnnouncementForm({
       if (audience === "ALL_ORG") included = true;
       else if (audience === "BUILDINGS") included = targetBuildingIds.includes(r.buildingId);
       else if (audience === "UNITS") included = targetUnitIds.includes(r.unitId);
-      if (included || includeUserIds.includes(r.userId)) {
-        if (!excludeUserIds.includes(r.userId)) distinct.set(r.userId, r);
-      }
+      else if (audience === "FLOORS") included = r.floor !== null && targetFloors.includes(`${r.buildingId}::${r.floor}`);
+      else if (audience === "INDIVIDUALS") included = includeUserIds.includes(r.userId);
+      if (included) distinct.set(r.userId, r);
     }
     return distinct.size;
-  }, [residents, audience, targetBuildingIds, targetUnitIds, includeUserIds, excludeUserIds]);
+  }, [residents, audience, targetBuildingIds, targetUnitIds, targetFloors, includeUserIds]);
 
   const requiresConfirmation = recipientCount > 20 && !confirmedLargeSend;
 
@@ -151,6 +153,7 @@ export function AnnouncementForm({
           <option value="ALL_ORG">All residents in the organization</option>
           <option value="BUILDINGS">Specific buildings</option>
           <option value="UNITS">Specific units</option>
+          <option value="FLOORS">Specific floors</option>
           <option value="INDIVIDUALS">Individual residents only</option>
         </select>
 
@@ -189,19 +192,29 @@ export function AnnouncementForm({
             ))}
           </div>
         ) : null}
-      </fieldset>
 
-      <fieldset>
-        <legend className={labelClasses}>Individual overrides</legend>
-        <p className="text-xs text-slate-500">
-          {audience === "INDIVIDUALS"
-            ? "Pick the residents who should receive this announcement."
-            : "Optionally add specific residents on top of the audience above, or exclude specific residents from it."}
-        </p>
-        <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <p className="mb-1 text-xs font-medium text-slate-600">Always include</p>
-            <div className="flex max-h-40 flex-col gap-1 overflow-y-auto rounded-md border border-slate-200 p-2">
+        {audience === "FLOORS" ? (
+          <div className="mt-2 flex max-h-48 flex-col gap-1 overflow-y-auto rounded-md border border-slate-200 p-3">
+            {floors.map((f) => (
+              <label key={f.key} className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  name="targetFloors"
+                  value={f.key}
+                  checked={targetFloors.includes(f.key)}
+                  onChange={() => toggle(targetFloors, setTargetFloors, f.key)}
+                  className={checkboxClasses}
+                />
+                {f.label}
+              </label>
+            ))}
+          </div>
+        ) : null}
+
+        {audience === "INDIVIDUALS" ? (
+          <div className="mt-2 flex flex-col gap-1">
+            <p className="text-xs text-slate-500">Pick the residents who should receive this announcement.</p>
+            <div className="mt-1 flex max-h-48 flex-col gap-1 overflow-y-auto rounded-md border border-slate-200 p-3">
               {residents.map((r) => (
                 <label key={r.userId} className="flex items-center gap-2 text-sm text-slate-700">
                   <input
@@ -217,25 +230,7 @@ export function AnnouncementForm({
               ))}
             </div>
           </div>
-          <div>
-            <p className="mb-1 text-xs font-medium text-slate-600">Always exclude</p>
-            <div className="flex max-h-40 flex-col gap-1 overflow-y-auto rounded-md border border-slate-200 p-2">
-              {residents.map((r) => (
-                <label key={r.userId} className="flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    name="excludeUserIds"
-                    value={r.userId}
-                    checked={excludeUserIds.includes(r.userId)}
-                    onChange={() => toggle(excludeUserIds, setExcludeUserIds, r.userId)}
-                    className={checkboxClasses}
-                  />
-                  {r.name}
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
+        ) : null}
       </fieldset>
 
       <p className="text-sm text-slate-600">
@@ -285,10 +280,6 @@ export function AnnouncementForm({
             />
           </label>
         ) : null}
-        <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input type="checkbox" name="isTemplate" defaultChecked={defaultValues?.isTemplate} className={checkboxClasses} />
-          Save as a reusable template instead of sending
-        </label>
       </div>
 
       <fieldset className="rounded-md border border-slate-200 p-3">
@@ -343,7 +334,7 @@ export function AnnouncementForm({
         </Button>
         {preview ? (
           <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-4">
-            <div className="rounded-md bg-white p-4 shadow-sm" dangerouslySetInnerHTML={{ __html: body }} />
+            <div className="rich-text-content rounded-md bg-white p-4 shadow-sm" dangerouslySetInnerHTML={{ __html: body }} />
           </div>
         ) : null}
       </div>

@@ -6,6 +6,7 @@
     "announcements": "Announcements",
     "buildings": "Buildings",
     "residents": "Residents",
+    "account": "My account",
     "logout": "Log out",
     "switchOrg": "Switch organization"
   },
@@ -15,6 +16,12 @@
     "subtitle": "Maintenance, billing, and announcements — everything a small or medium building needs, in one place.",
     "getStarted": "Get started",
     "logIn": "Log in"
+  },
+  "session": {
+    "title": "Are you still there?",
+    "body": "For your security, we end inactive sessions automatically. Your session will close soon unless you'd like to stay signed in.",
+    "countdown": "Signing out in {seconds} seconds...",
+    "stayButton": "Stay signed in"
   },
   "auth": {
     "login": {
@@ -46,10 +53,10 @@
     "signup": {
       "title": "Create your organization",
       "orgName": "Organization name",
-      "yourName": "Your name",
+      "firstName": "First name",
+      "lastName": "Last name",
       "email": "Email",
       "password": "Password",
-      "alreadyHaveAccount": "Already have an account with this email? Enter its existing password to create another organization under it.",
       "createOrganization": "Create organization",
       "creating": "Creating...",
       "haveAccount": "Already have an account?",
@@ -62,8 +69,11 @@
       "firstName": "First name",
       "lastName": "Last name",
       "email": "Email",
+      "phone": "Phone number",
+      "dateOfBirth": "Date of birth",
+      "emergencyContactName": "Emergency contact name",
+      "emergencyContactPhone": "Emergency contact phone number",
       "password": "Password",
-      "helperText": "If you already have an account with this email, enter its existing password to join. Otherwise this password will create your new account.",
       "join": "Join",
       "joining": "Joining...",
       "expiredTitle": "Invite no longer valid",
@@ -75,6 +85,15 @@
     "delete": "Delete",
     "save": "Save",
     "cancel": "Cancel"
+  },
+  "account": {
+    "heading": "My account",
+    "description": "Keep your contact information up to date.",
+    "email": "Email",
+    "phone": "Phone number",
+    "save": "Save changes",
+    "saving": "Saving...",
+    "success": "Your contact information has been updated."
   },
   "dashboard": {
     "welcome": "Welcome, {name}",
@@ -106,12 +125,9 @@
   },
   "announcements": {
     "heading": "Announcements",
-    "templates": "Templates",
-    "backToAnnouncements": "Back to announcements",
     "postAnnouncement": "Post announcement",
     "search": "Search announcements...",
     "noAnnouncements": "No announcements yet",
-    "noTemplates": "No templates yet",
     "view": "View",
     "duplicate": "Duplicate",
     "iveReadThis": "I've read this",
@@ -122,6 +138,8 @@
     "addBuilding": "Add building",
     "building": "Building",
     "units": "Units",
+    "rentedUnits": "Rented units",
+    "vacantUnits": "Vacant units",
     "noBuildings": "No buildings yet",
     "noBuildingsDescription": "Add your first building to get started.",
     "noUnits": "No units yet",
