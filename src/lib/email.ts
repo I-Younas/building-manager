@@ -81,6 +81,38 @@ export async function sendAnnouncementEmail({
   return { messageId: data?.id ?? null };
 }
 
+export async function sendUnitSetupNeededEmail({
+  to,
+  residentName,
+  buildingName,
+  unitNumber,
+  unitUrl,
+}: {
+  to: string;
+  residentName: string;
+  buildingName: string;
+  unitNumber: string;
+  unitUrl: string;
+}) {
+  const from = process.env.EMAIL_FROM;
+  if (!from) {
+    throw new Error("EMAIL_FROM is not configured.");
+  }
+
+  const subject = `Finish unit setup for ${buildingName} / Unit ${unitNumber}`;
+  const { error } = await getClient().emails.send({
+    from,
+    to,
+    subject,
+    text: `${residentName} has completed signup for ${buildingName} / Unit ${unitNumber}. Enter lease details to finalize the unit as rented:\n${unitUrl}`,
+    html: `<p><strong>${residentName}</strong> has completed signup for <strong>${buildingName} / Unit ${unitNumber}</strong>.</p><p><a href="${unitUrl}">Enter lease details</a> to finalize the unit as rented.</p>`,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function sendContactInfoChangedEmail({
   to,
   residentName,
@@ -109,6 +141,25 @@ export async function sendContactInfoChangedEmail({
     html: `<p><strong>${residentName}</strong> updated their contact information on Building Manager:</p><ul>${lines
       .map((line) => `<li>${line}</li>`)
       .join("")}</ul>`,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function sendVerificationEmail({ to, verifyUrl }: { to: string; verifyUrl: string }) {
+  const from = process.env.EMAIL_FROM;
+  if (!from) {
+    throw new Error("EMAIL_FROM is not configured.");
+  }
+
+  const { error } = await getClient().emails.send({
+    from,
+    to,
+    subject: "Verify your Building Manager email address",
+    text: `Welcome to Building Manager! Follow this link to verify your email address:\n${verifyUrl}\n\nThis link expires in 1 hour.`,
+    html: `<p>Welcome to Building Manager!</p><p><a href="${verifyUrl}">Click here to verify your email address</a></p><p>This link expires in 1 hour.</p>`,
   });
 
   if (error) {

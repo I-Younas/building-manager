@@ -122,13 +122,16 @@ model User {
   emergencyContactName  String?
   emergencyContactPhone String?
   isActive              Boolean   @default(true)
+  emailVerifiedAt       DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
   memberships                    OrgMembership[]
   sessions                       Session[]
   passwordResetTokens            PasswordResetToken[]
+  emailVerificationTokens        EmailVerificationToken[]
   unitMemberships                UnitResident[]
+  leasesAsPrimaryResident        Lease[]                         @relation("LeasePrimaryResident")
   assignedTickets                MaintenanceTicket[]             @relation("AssignedStaff")
   reportedTickets                MaintenanceTicket[]             @relation("ReportedBy")
   ticketComments                 TicketComment[]
@@ -173,6 +176,20 @@ model PasswordResetToken {
   @@index([expiresAt])
 }
 
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
 // ---------- Tenancy ----------
 
 model Organization {
@@ -193,12 +210,14 @@ model OrgMembership {
   userId         String
   organizationId String
   role           OrgRole
+  employeeId     String?
   createdAt      DateTime @default(now())
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, organizationId])
+  @@unique([organizationId, employeeId])
   @@index([organizationId, role])
 }
 
@@ -233,6 +252,7 @@ model Unit {
 
   building      Building            @relation(fields: [buildingId], references: [id], onDelete: Cascade)
   residentLinks UnitResident[]
+  leases        Lease[]
   tickets       MaintenanceTicket[]
   invoices      Invoice[]
   inviteCodes   InviteCode[]
@@ -242,21 +262,51 @@ model Unit {
 }
 
 model UnitResident {
-  id             String                    @id @default(cuid())
-  unitId         String
-  userId         String
-  relationship   UnitResidentRelationship?
-  isPrimary      Boolean                   @default(false)
-  leaseStartDate DateTime?
-  leaseEndDate   DateTime?
-  renewalSigned  Boolean                   @default(false)
-  createdAt      DateTime                  @default(now())
+  id           String                    @id @default(cuid())
+  unitId       String
+  userId       String
+  relationship UnitResidentRelationship?
+  isPrimary    Boolean                   @default(false)
+  createdAt    DateTime                  @default(now())
 
   unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([unitId, userId])
   @@index([userId])
+}
+
+enum LeaseStatus {
+  ACTIVE
+  SUPERSEDED
+  EXPIRED
+}
+
+enum RenewalStatus {
+  PENDING_DECISION
+  RENEWAL_IN_PROGRESS
+  RENEWED
+  NOT_RENEWING
+}
+
+model Lease {
+  id                String         @id @default(cuid())
+  unitId            String
+  primaryResidentId String
+  leaseStartDate    DateTime
+  leaseEndDate      DateTime
+  status            LeaseStatus    @default(ACTIVE)
+  renewalStatus     RenewalStatus?
+  previousLeaseId   String?        @unique
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  unit            Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  primaryResident User   @relation("LeasePrimaryResident", fields: [primaryResidentId], references: [id])
+  previousLease   Lease? @relation("LeaseRenewal", fields: [previousLeaseId], references: [id])
+  renewedInto     Lease? @relation("LeaseRenewal")
+
+  @@index([unitId, status])
 }
 
 // Resident (or staff) onboarding without email delivery.
@@ -268,6 +318,7 @@ model InviteCode {
   unitId         String?
   relationship   UnitResidentRelationship?
   email          String?
+  employeeId     String?
   createdById    String
   expiresAt      DateTime
   usedAt         DateTime?

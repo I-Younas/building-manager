@@ -35,6 +35,11 @@ export function SignupForm({ dict }: { dict: Dictionary["auth"]["signup"] }) {
       </label>
 
       <label className={labelClasses}>
+        {dict.phone}
+        <input name="phone" type="tel" required maxLength={30} className={inputClasses} />
+      </label>
+
+      <label className={labelClasses}>
         {dict.password}
         <input name="password" type="password" required minLength={8} className={inputClasses} />
       </label>

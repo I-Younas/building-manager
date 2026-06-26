@@ -5,6 +5,7 @@ export const createInviteSchema = z.object({
   buildingName: z.string().trim().max(200).optional().or(z.literal("")),
   unitNumber: z.string().trim().max(50).optional().or(z.literal("")),
   email: z.string().trim().email("Enter a valid email address"),
+  employeeId: z.string().trim().max(50).optional().or(z.literal("")),
 });
 
 export const redeemInviteSchema = z.object({

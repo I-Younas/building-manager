@@ -28,6 +28,11 @@ export function StaffInviteForm() {
         />
       </label>
 
+      <label className={labelClasses}>
+        Employee ID
+        <input name="employeeId" required maxLength={50} className={inputClasses} />
+      </label>
+
       {error ? <ErrorText>{error}</ErrorText> : null}
 
       <Button type="submit" disabled={pending} className="self-start">

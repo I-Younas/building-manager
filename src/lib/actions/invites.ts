@@ -8,7 +8,7 @@ import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
 import { generateInviteCode } from "@/lib/auth/crypto";
 import { createInviteSchema, redeemInviteSchema, residentRegistrationSchema } from "@/lib/validation/invites";
-import { sendInviteEmail } from "@/lib/email";
+import { sendInviteEmail, sendUnitSetupNeededEmail } from "@/lib/email";
 
 const INVITE_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -25,6 +25,7 @@ export async function createInviteCode(
     buildingName: formData.get("buildingName") ?? undefined,
     unitNumber: formData.get("unitNumber") ?? undefined,
     email: formData.get("email"),
+    employeeId: formData.get("employeeId") ?? undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please check the form and try again." };
@@ -32,6 +33,10 @@ export async function createInviteCode(
 
   const { role, email } = parsed.data;
   let unitId: string | null = null;
+
+  if (role === "STAFF" && !parsed.data.employeeId) {
+    return { error: "Enter an employee ID for a staff invite." };
+  }
 
   if (role === "RESIDENT") {
     if (!parsed.data.buildingName || !parsed.data.unitNumber) {
@@ -72,6 +77,7 @@ export async function createInviteCode(
       role,
       unitId,
       email,
+      employeeId: role === "STAFF" ? parsed.data.employeeId : null,
       createdById: user.id,
       expiresAt: new Date(Date.now() + INVITE_DURATION_MS),
     },
@@ -157,9 +163,17 @@ export async function redeemInvite(
         dateOfBirth: residentDetails ? new Date(residentDetails.dateOfBirth) : undefined,
         emergencyContactName: residentDetails?.emergencyContactName,
         emergencyContactPhone: residentDetails?.emergencyContactPhone,
+        // Reaching this page already required the unguessable invite token
+        // sent to this address, which is the same trust level as clicking a
+        // verification link, so self-serve email verification isn't needed.
+        emailVerifiedAt: new Date(),
       },
     });
     userId = user.id;
+  }
+
+  if (existingUser && !existingUser.emailVerifiedAt) {
+    await prisma.user.update({ where: { id: existingUser.id }, data: { emailVerifiedAt: new Date() } });
   }
 
   const alreadyMember = await prisma.orgMembership.findUnique({
@@ -171,7 +185,12 @@ export async function redeemInvite(
 
   await prisma.$transaction(async (tx) => {
     await tx.orgMembership.create({
-      data: { userId, organizationId: invite.organizationId, role: invite.role },
+      data: {
+        userId,
+        organizationId: invite.organizationId,
+        role: invite.role,
+        employeeId: invite.role === "STAFF" ? invite.employeeId : null,
+      },
     });
 
     if (invite.role === "RESIDENT" && invite.unitId) {
@@ -185,6 +204,31 @@ export async function redeemInvite(
       data: { usedAt: new Date(), usedByUserId: userId },
     });
   });
+
+  if (invite.role === "RESIDENT" && invite.unitId) {
+    const unit = await prisma.unit.findUnique({ where: { id: invite.unitId }, include: { building: true } });
+    const admins = await prisma.orgMembership.findMany({
+      where: { organizationId: invite.organizationId, role: "ORG_ADMIN" },
+      include: { user: true },
+    });
+    const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+
+    if (unit) {
+      for (const admin of admins) {
+        try {
+          await sendUnitSetupNeededEmail({
+            to: admin.user.email,
+            residentName: name,
+            buildingName: unit.building.name,
+            unitNumber: unit.unitNumber,
+            unitUrl: `${appUrl}/dashboard/units/${unit.id}`,
+          });
+        } catch (err) {
+          console.error("Failed to send unit-setup-needed notification:", err);
+        }
+      }
+    }
+  }
 
   await createSession(userId, invite.organizationId);
   redirect("/dashboard");

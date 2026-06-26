@@ -14,10 +14,8 @@
     "tagline": "Building Manager",
     "heading": "Un logiciel de gestion immobilière sans le prix d'une solution d'entreprise",
     "subtitle": "Entretien, paiements et annonces — tout ce dont un immeuble petit ou moyen a besoin, au même endroit.",
-    "getStarted": "Commencer",
-    "logIn": "Se connecter",
-    "residentLogIn": "Connexion résident",
-    "staffLogIn": "Connexion personnel"
+    "signUp": "S'inscrire",
+    "signIn": "Se connecter"
   },
   "session": {
     "title": "Êtes-vous toujours là ?",
@@ -33,30 +31,22 @@
       "forgotPassword": "Mot de passe oublié ?",
       "loggingIn": "Connexion...",
       "logIn": "Se connecter",
-      "settingUp": "Vous créez un nouvel immeuble ?",
-      "createOrg": "Créer une organisation",
-      "residentLink": "Résident ? Connectez-vous ici.",
-      "staffLink": "Membre du personnel ? Connectez-vous ici."
+      "employeeId": "Numéro d'employé",
+      "signUpPrompt": "Vous n'avez pas de compte ?",
+      "signUpLink": "S'inscrire",
+      "tabs": {
+        "orgAdmin": "Administrateur",
+        "resident": "Résident",
+        "staff": "Personnel"
+      }
     },
-    "residentLogin": {
-      "title": "Connexion résident",
-      "email": "Courriel",
-      "password": "Mot de passe",
-      "forgotPassword": "Mot de passe oublié ?",
-      "loggingIn": "Connexion...",
-      "logIn": "Se connecter",
-      "adminLink": "Administrateur de l'organisation ? Connectez-vous ici.",
-      "staffLink": "Membre du personnel ? Connectez-vous ici."
-    },
-    "staffLogin": {
-      "title": "Connexion personnel",
-      "email": "Courriel",
-      "password": "Mot de passe",
-      "forgotPassword": "Mot de passe oublié ?",
-      "loggingIn": "Connexion...",
-      "logIn": "Se connecter",
-      "adminLink": "Administrateur de l'organisation ? Connectez-vous ici.",
-      "residentLink": "Résident ? Connectez-vous ici."
+    "verifyEmail": {
+      "title": "Vérifiez votre courriel",
+      "body": "Nous avons envoyé un lien de vérification à {email}. Cliquez sur le lien pour activer votre compte et accéder à votre tableau de bord.",
+      "resend": "Renvoyer le courriel",
+      "resent": "Courriel de vérification envoyé.",
+      "expiredTitle": "Lien de vérification invalide",
+      "expiredDescription": "Ce lien de vérification a déjà été utilisé ou a expiré. Connectez-vous pour en demander un nouveau."
     },
     "forgotPassword": {
       "title": "Réinitialiser votre mot de passe",
@@ -80,6 +70,7 @@
       "firstName": "Prénom",
       "lastName": "Nom de famille",
       "email": "Courriel",
+      "phone": "Numéro de téléphone",
       "password": "Mot de passe",
       "createOrganization": "Créer l'organisation",
       "creating": "Création en cours...",
@@ -163,6 +154,7 @@
     "units": "Unités",
     "rentedUnits": "Unités louées",
     "vacantUnits": "Unités vacantes",
+    "pendingUnits": "en attente",
     "noBuildings": "Aucun immeuble pour le moment",
     "noBuildingsDescription": "Ajoutez votre premier immeuble pour commencer.",
     "noUnits": "Aucune unité pour le moment",

@@ -5,14 +5,39 @@ import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { createSession, destroySession, setActiveOrganization } from "@/lib/auth/session";
 import { requireUser } from "@/lib/auth/dal";
-import { generatePasswordResetToken, sha256 } from "@/lib/auth/crypto";
-import { sendPasswordResetEmail } from "@/lib/email";
-import { signupSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "@/lib/validation/auth";
+import { generatePasswordResetToken, generateEmailVerificationToken, sha256 } from "@/lib/auth/crypto";
+import { sendPasswordResetEmail, sendVerificationEmail } from "@/lib/email";
+import {
+  signupSchema,
+  loginSchema,
+  staffLoginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "@/lib/validation/auth";
 
 export type AuthActionState = { error: string } | undefined;
 
 const RESET_TOKEN_DURATION_MS = 60 * 60 * 1000;
+const VERIFICATION_TOKEN_DURATION_MS = 60 * 60 * 1000;
 const FORGOT_PASSWORD_MESSAGE = "If an account exists for that email, we've sent a password reset link.";
+
+async function sendEmailVerification(userId: string, email: string) {
+  const token = generateEmailVerificationToken();
+  await prisma.emailVerificationToken.create({
+    data: {
+      userId,
+      tokenHash: sha256(token),
+      expiresAt: new Date(Date.now() + VERIFICATION_TOKEN_DURATION_MS),
+    },
+  });
+
+  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  try {
+    await sendVerificationEmail({ to: email, verifyUrl: `${appUrl}/verify-email/${token}` });
+  } catch (err) {
+    console.error("Failed to send verification email:", err);
+  }
+}
 
 function slugify(name: string) {
   return name
@@ -41,6 +66,7 @@ export async function signupOrgAdmin(
     firstName: formData.get("firstName"),
     lastName: formData.get("lastName"),
     email: formData.get("email"),
+    phone: formData.get("phone"),
     password: formData.get("password"),
   });
 
@@ -48,7 +74,7 @@ export async function signupOrgAdmin(
     return { error: parsed.error.issues[0]?.message ?? "Please check the form and try again." };
   }
 
-  const { organizationName, firstName, lastName, email, password } = parsed.data;
+  const { organizationName, firstName, lastName, email, phone, password } = parsed.data;
   const name = `${firstName} ${lastName}`;
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -71,15 +97,20 @@ export async function signupOrgAdmin(
     const organization = await tx.organization.create({
       data: { name: organizationName, slug },
     });
-    const user = existingUser ?? (await tx.user.create({ data: { name, email, passwordHash: passwordHash! } }));
+    const user =
+      existingUser ?? (await tx.user.create({ data: { name, email, phone, passwordHash: passwordHash! } }));
     await tx.orgMembership.create({
       data: { userId: user.id, organizationId: organization.id, role: "ORG_ADMIN" },
     });
     return { userId: user.id, organizationId: organization.id };
   });
 
+  if (!existingUser) {
+    await sendEmailVerification(userId, email);
+  }
+
   await createSession(userId, organizationId);
-  redirect("/dashboard");
+  redirect(existingUser?.emailVerifiedAt ? "/dashboard" : "/verify-email");
 }
 
 async function authenticateForRole(
@@ -87,6 +118,7 @@ async function authenticateForRole(
   password: string,
   role: "ORG_ADMIN" | "STAFF" | "RESIDENT",
   wrongRoleMessage: string,
+  employeeId?: string,
 ): Promise<AuthActionState> {
   const user = await prisma.user.findUnique({
     where: { email },
@@ -107,8 +139,12 @@ async function authenticateForRole(
     return { error: wrongRoleMessage };
   }
 
+  if (employeeId !== undefined && membership.employeeId !== employeeId) {
+    return { error: "Invalid email or password." };
+  }
+
   await createSession(user.id, membership.organizationId);
-  redirect("/dashboard");
+  redirect(user.emailVerifiedAt ? "/dashboard" : "/verify-email");
 }
 
 export async function login(
@@ -157,9 +193,10 @@ export async function staffLogin(
   _prevState: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
-  const parsed = loginSchema.safeParse({
+  const parsed = staffLoginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
+    employeeId: formData.get("employeeId"),
   });
 
   if (!parsed.success) {
@@ -171,6 +208,7 @@ export async function staffLogin(
     parsed.data.password,
     "STAFF",
     "This account isn't a staff account. Use the organization admin or resident login page instead.",
+    parsed.data.employeeId,
   );
 }
 
@@ -191,6 +229,33 @@ export async function switchActiveOrganization(organizationId: string) {
   }
 
   await setActiveOrganization(organizationId);
+  redirect("/dashboard");
+}
+
+export type ResendVerificationState = { sent: boolean } | undefined;
+
+export async function resendVerificationEmail(
+  _prevState: ResendVerificationState,
+  _formData: FormData,
+): Promise<ResendVerificationState> {
+  const user = await requireUser();
+  if (!user.emailVerifiedAt) {
+    await sendEmailVerification(user.id, user.email);
+  }
+  return { sent: true };
+}
+
+export async function verifyEmail(token: string): Promise<AuthActionState> {
+  const verificationToken = await prisma.emailVerificationToken.findUnique({ where: { tokenHash: sha256(token) } });
+  if (!verificationToken || verificationToken.usedAt || verificationToken.expiresAt < new Date()) {
+    return { error: "This verification link is invalid or has expired." };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({ where: { id: verificationToken.userId }, data: { emailVerifiedAt: new Date() } });
+    await tx.emailVerificationToken.update({ where: { id: verificationToken.id }, data: { usedAt: new Date() } });
+  });
+
   redirect("/dashboard");
 }
 

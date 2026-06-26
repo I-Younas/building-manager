@@ -14,10 +14,8 @@
     "tagline": "Building Manager",
     "heading": "Building management software, without the enterprise price tag",
     "subtitle": "Maintenance, billing, and announcements — everything a small or medium building needs, in one place.",
-    "getStarted": "Get started",
-    "logIn": "Log in",
-    "residentLogIn": "Resident login",
-    "staffLogIn": "Staff login"
+    "signUp": "Sign Up",
+    "signIn": "Sign In"
   },
   "session": {
     "title": "Are you still there?",
@@ -33,30 +31,22 @@
       "forgotPassword": "Forgot your password?",
       "loggingIn": "Logging in...",
       "logIn": "Log in",
-      "settingUp": "Setting up a new building?",
-      "createOrg": "Create an organization",
-      "residentLink": "Resident? Log in here.",
-      "staffLink": "Staff member? Log in here."
+      "employeeId": "Employee ID",
+      "signUpPrompt": "Don't have an account?",
+      "signUpLink": "Sign up",
+      "tabs": {
+        "orgAdmin": "Org Admin",
+        "resident": "Resident",
+        "staff": "Staff"
+      }
     },
-    "residentLogin": {
-      "title": "Resident log in",
-      "email": "Email",
-      "password": "Password",
-      "forgotPassword": "Forgot your password?",
-      "loggingIn": "Logging in...",
-      "logIn": "Log in",
-      "adminLink": "Organization admin? Log in here.",
-      "staffLink": "Staff member? Log in here."
-    },
-    "staffLogin": {
-      "title": "Staff log in",
-      "email": "Email",
-      "password": "Password",
-      "forgotPassword": "Forgot your password?",
-      "loggingIn": "Logging in...",
-      "logIn": "Log in",
-      "adminLink": "Organization admin? Log in here.",
-      "residentLink": "Resident? Log in here."
+    "verifyEmail": {
+      "title": "Verify your email",
+      "body": "We've sent a verification link to {email}. Click the link to activate your account and access your dashboard.",
+      "resend": "Resend email",
+      "resent": "Verification email sent.",
+      "expiredTitle": "Verification link no longer valid",
+      "expiredDescription": "This verification link has already been used or has expired. Log in and request a new one."
     },
     "forgotPassword": {
       "title": "Reset your password",
@@ -80,6 +70,7 @@
       "firstName": "First name",
       "lastName": "Last name",
       "email": "Email",
+      "phone": "Phone number",
       "password": "Password",
       "createOrganization": "Create organization",
       "creating": "Creating...",
@@ -163,6 +154,7 @@
     "units": "Units",
     "rentedUnits": "Rented units",
     "vacantUnits": "Vacant units",
+    "pendingUnits": "pending",
     "noBuildings": "No buildings yet",
     "noBuildingsDescription": "Add your first building to get started.",
     "noUnits": "No units yet",

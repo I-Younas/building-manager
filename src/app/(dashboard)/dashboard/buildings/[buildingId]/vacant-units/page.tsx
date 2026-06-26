@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
-import { Card, EmptyState, PageHeader } from "@/components/ui";
+import { getUnitStatus, getDaysVacant } from "@/lib/leases/status";
+import { EmptyState, LinkButton, PageHeader, tableClasses, tableWrapClasses, tdClasses, thClasses, theadClasses, trClasses } from "@/components/ui";
 
 export default async function VacantUnitsPage({
   params,
@@ -16,13 +17,24 @@ export default async function VacantUnitsPage({
     where: { id: buildingId, organizationId },
     include: {
       units: {
-        where: { residentLinks: { none: {} } },
+        include: {
+          residentLinks: { select: { id: true } },
+          leases: { orderBy: { leaseEndDate: "desc" }, take: 1, select: { status: true, leaseEndDate: true } },
+        },
         orderBy: { unitNumber: "asc" },
       },
     },
   });
 
   if (!building) notFound();
+
+  const vacantUnits = building.units
+    .filter((unit) => getUnitStatus(unit) === "VACANT")
+    .map((unit) => ({
+      id: unit.id,
+      unitNumber: unit.unitNumber,
+      daysVacant: getDaysVacant(unit, unit.leases[0] ?? null),
+    }));
 
   return (
     <div>
@@ -31,18 +43,39 @@ export default async function VacantUnitsPage({
       </Link>
       <PageHeader title={`${building.name} — Vacant units`} />
 
-      {building.units.length === 0 ? (
+      {vacantUnits.length === 0 ? (
         <EmptyState title="No vacant units" />
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {building.units.map((unit) => (
-            <Link key={unit.id} href={`/dashboard/units/${unit.id}`}>
-              <Card className="transition-shadow hover:shadow-md">
-                <p className="font-medium text-slate-900">Unit {unit.unitNumber}</p>
-                {unit.floor ? <p className="mt-1 text-sm text-slate-500">Floor {unit.floor}</p> : null}
-              </Card>
-            </Link>
-          ))}
+        <div className={tableWrapClasses}>
+          <table className={tableClasses}>
+            <thead className={theadClasses}>
+              <tr>
+                <th className={thClasses}>Unit</th>
+                <th className={thClasses}>Days vacant</th>
+                <th className={thClasses}></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {vacantUnits.map((unit) => (
+                <tr key={unit.id} className={trClasses}>
+                  <td className={tdClasses}>
+                    <Link href={`/dashboard/units/${unit.id}`} className="font-medium text-blue-600 hover:underline">
+                      Unit {unit.unitNumber}
+                    </Link>
+                  </td>
+                  <td className={tdClasses}>{unit.daysVacant}</td>
+                  <td className={tdClasses}>
+                    <LinkButton
+                      href={`/dashboard/residents/invite?buildingName=${encodeURIComponent(building.name)}&unitNumber=${encodeURIComponent(unit.unitNumber)}`}
+                      variant="secondary"
+                    >
+                      Invite Resident
+                    </LinkButton>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

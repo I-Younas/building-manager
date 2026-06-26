@@ -40,6 +40,7 @@ export async function requireUser() {
 export const requireOrgScope = cache(async () => {
   const session = await getSession();
   if (!session) redirect("/login");
+  if (!session.user.emailVerifiedAt) redirect("/verify-email");
   if (!session.activeOrganizationId) redirect("/login");
 
   const membership = await prisma.orgMembership.findUnique({
