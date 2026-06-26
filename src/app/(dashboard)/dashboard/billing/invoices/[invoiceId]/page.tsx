@@ -24,12 +24,13 @@ export default async function InvoiceDetailPage({
 }) {
   const { user, organizationId, role } = await requireOrgScope();
   const { invoiceId } = await params;
-  const isAdmin = role !== "RESIDENT";
+  const isAdmin = role === "ORG_ADMIN";
 
   const invoice = await prisma.invoice.findFirst({
     where: { id: invoiceId, organizationId },
     include: {
       unit: { include: { building: true } },
+      billedTo: true,
       lineItems: true,
       payments: { include: { recordedBy: true }, orderBy: { paidAt: "asc" } },
     },
@@ -39,21 +40,33 @@ export default async function InvoiceDetailPage({
 
   if (!isAdmin) {
     if (invoice.status === "DRAFT") notFound();
-    const isUnitMember = await prisma.unitResident.findUnique({
-      where: { unitId_userId: { unitId: invoice.unitId, userId: user.id } },
-    });
-    if (!isUnitMember) notFound();
+
+    if (role === "RESIDENT") {
+      const isUnitMember = invoice.unitId
+        ? await prisma.unitResident.findUnique({
+            where: { unitId_userId: { unitId: invoice.unitId, userId: user.id } },
+          })
+        : null;
+      if (!isUnitMember) notFound();
+    } else if (role === "STAFF") {
+      if (invoice.billedToUserId !== user.id) notFound();
+    }
   }
 
   const totalCents = invoice.lineItems.reduce((sum, item) => sum + item.amountCents * item.quantity, 0);
   const paidCents = invoice.payments.reduce((sum, payment) => sum + payment.amountCents, 0);
   const balanceCents = totalCents - paidCents;
 
+  const subtitle =
+    invoice.type === "RENT" && invoice.unit
+      ? `${invoice.unit.building.name} / Unit ${invoice.unit.unitNumber} · Due ${invoice.dueDate.toLocaleDateString()}`
+      : `Billed to ${invoice.billedTo?.name ?? "staff"} · Due ${invoice.dueDate.toLocaleDateString()}`;
+
   return (
     <div>
       <PageHeader
         title={invoice.invoiceNumber}
-        description={`${invoice.unit.building.name} / Unit ${invoice.unit.unitNumber} · Due ${invoice.dueDate.toLocaleDateString()}`}
+        description={subtitle}
         actions={
           <>
             <StatusBadge status={getDisplayStatus(invoice)} />
@@ -74,6 +87,24 @@ export default async function InvoiceDetailPage({
           </>
         }
       />
+
+      {invoice.type === "RENT" && invoice.rentPeriodStart && invoice.rentPeriodEnd ? (
+        <p className="mb-6 text-sm text-slate-500">
+          Rent period: {invoice.rentPeriodStart.toLocaleDateString()} – {invoice.rentPeriodEnd.toLocaleDateString()}
+        </p>
+      ) : null}
+
+      {invoice.type === "SERVICE" ? (
+        <div className="mb-6 text-sm text-slate-500">
+          {invoice.serviceDescription ? <p className="whitespace-pre-wrap">{invoice.serviceDescription}</p> : null}
+          {invoice.servicePeriodStart && invoice.servicePeriodEnd ? (
+            <p className="mt-1">
+              Service period: {invoice.servicePeriodStart.toLocaleDateString()} –{" "}
+              {invoice.servicePeriodEnd.toLocaleDateString()}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <h2 className="mb-3 text-lg font-semibold text-slate-900">Line items</h2>
       <div className={`${tableWrapClasses} mb-6`}>

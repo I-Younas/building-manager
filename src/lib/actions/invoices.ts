@@ -15,22 +15,90 @@ export async function createInvoice(
 ): Promise<FormActionState> {
   const { organizationId } = await requireAdminOrStaff();
 
-  const parsed = createInvoiceSchema.safeParse({
-    unitId: formData.get("unitId"),
-    dueDate: formData.get("dueDate"),
-  });
+  const parsed = createInvoiceSchema.safeParse(
+    formData.get("type") === "SERVICE"
+      ? {
+          type: "SERVICE",
+          billedToUserId: formData.get("billedToUserId"),
+          dueDate: formData.get("dueDate"),
+          serviceDescription: formData.get("serviceDescription"),
+          servicePeriodStart: formData.get("servicePeriodStart"),
+          servicePeriodEnd: formData.get("servicePeriodEnd"),
+        }
+      : {
+          type: "RENT",
+          unitId: formData.get("unitId"),
+          dueDate: formData.get("dueDate"),
+          rentPeriodStart: formData.get("rentPeriodStart"),
+          rentPeriodEnd: formData.get("rentPeriodEnd"),
+        },
+  );
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please check the form and try again." };
-  }
-
-  const unit = await prisma.unit.findFirst({ where: { id: parsed.data.unitId, organizationId } });
-  if (!unit) {
-    return { error: "Unit not found." };
   }
 
   const dueDate = new Date(parsed.data.dueDate);
   if (Number.isNaN(dueDate.getTime())) {
     return { error: "Enter a valid due date." };
+  }
+
+  let invoiceData: {
+    type: "RENT" | "SERVICE";
+    unitId: string | null;
+    billedToUserId: string | null;
+    rentPeriodStart: Date | null;
+    rentPeriodEnd: Date | null;
+    serviceDescription: string | null;
+    servicePeriodStart: Date | null;
+    servicePeriodEnd: Date | null;
+  };
+
+  if (parsed.data.type === "RENT") {
+    const unit = await prisma.unit.findFirst({ where: { id: parsed.data.unitId, organizationId } });
+    if (!unit) {
+      return { error: "Unit not found." };
+    }
+
+    const rentPeriodStart = new Date(parsed.data.rentPeriodStart);
+    const rentPeriodEnd = new Date(parsed.data.rentPeriodEnd);
+    if (Number.isNaN(rentPeriodStart.getTime()) || Number.isNaN(rentPeriodEnd.getTime())) {
+      return { error: "Enter a valid rent period." };
+    }
+
+    invoiceData = {
+      type: "RENT",
+      unitId: unit.id,
+      billedToUserId: null,
+      rentPeriodStart,
+      rentPeriodEnd,
+      serviceDescription: null,
+      servicePeriodStart: null,
+      servicePeriodEnd: null,
+    };
+  } else {
+    const membership = await prisma.orgMembership.findUnique({
+      where: { userId_organizationId: { userId: parsed.data.billedToUserId, organizationId } },
+    });
+    if (!membership || membership.role !== "STAFF") {
+      return { error: "Service invoices can only be billed to staff in this organization." };
+    }
+
+    const servicePeriodStart = new Date(parsed.data.servicePeriodStart);
+    const servicePeriodEnd = new Date(parsed.data.servicePeriodEnd);
+    if (Number.isNaN(servicePeriodStart.getTime()) || Number.isNaN(servicePeriodEnd.getTime())) {
+      return { error: "Enter a valid service period." };
+    }
+
+    invoiceData = {
+      type: "SERVICE",
+      unitId: null,
+      billedToUserId: membership.userId,
+      rentPeriodStart: null,
+      rentPeriodEnd: null,
+      serviceDescription: parsed.data.serviceDescription,
+      servicePeriodStart,
+      servicePeriodEnd,
+    };
   }
 
   const descriptions = formData.getAll("description").map(String);
@@ -66,10 +134,10 @@ export async function createInvoice(
     return tx.invoice.create({
       data: {
         organizationId,
-        unitId: unit.id,
         invoiceNumber,
         issueDate: new Date(),
         dueDate,
+        ...invoiceData,
         lineItems: { create: lineItems },
       },
     });

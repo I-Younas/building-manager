@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { logout, switchActiveOrganization } from "@/lib/actions/auth";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { IdleSessionMonitor } from "@/components/idle-session-monitor";
+import { AccountMenu } from "@/components/account-menu";
 import { getDictionary, getLocale } from "@/lib/i18n/get-dictionary";
 import { Badge, Button } from "@/components/ui";
 
@@ -26,11 +26,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     { href: "/dashboard/maintenance", label: dict.nav.maintenance },
     { href: "/dashboard/billing/invoices", label: dict.nav.payments },
     { href: "/dashboard/announcements", label: dict.nav.announcements },
-    { href: "/dashboard/account", label: dict.nav.account },
   ];
   const navItemsAdmin = [
     { href: "/dashboard/buildings", label: dict.nav.buildings },
     { href: "/dashboard/residents", label: dict.nav.residents },
+    { href: "/dashboard/staff", label: dict.nav.staff },
   ];
   const navItems = role !== "RESIDENT" ? [...navItemsBase, ...navItemsAdmin] : navItemsBase;
 
@@ -73,9 +73,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
           <div className="flex items-center gap-4">
             <LocaleSwitcher locale={locale} />
-            <Link href="/dashboard/account" className="text-sm text-slate-600 hover:text-slate-900 hover:underline">
-              {user.name}
-            </Link>
+            <AccountMenu name={user.name} email={user.email} phone={user.phone ?? ""} dict={dict.account} />
             <form action={logout}>
               <Button type="submit" variant="secondary" size="sm">
                 {dict.nav.logout}

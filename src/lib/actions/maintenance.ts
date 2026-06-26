@@ -147,8 +147,8 @@ export async function assignTicket(
         userId_organizationId: { userId: parsed.data.assigneeUserId, organizationId },
       },
     });
-    if (!membership || membership.role === "RESIDENT") {
-      return { error: "Tickets can only be assigned to staff or admins in this organization." };
+    if (!membership || membership.role !== "STAFF") {
+      return { error: "Tickets can only be assigned to staff in this organization." };
     }
     assigneeUserId = parsed.data.assigneeUserId;
   }

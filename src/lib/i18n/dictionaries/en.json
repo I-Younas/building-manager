@@ -6,7 +6,7 @@
     "announcements": "Announcements",
     "buildings": "Buildings",
     "residents": "Residents",
-    "account": "My account",
+    "staff": "Staff",
     "logout": "Log out",
     "switchOrg": "Switch organization"
   },
@@ -15,7 +15,9 @@
     "heading": "Building management software, without the enterprise price tag",
     "subtitle": "Maintenance, billing, and announcements — everything a small or medium building needs, in one place.",
     "getStarted": "Get started",
-    "logIn": "Log in"
+    "logIn": "Log in",
+    "residentLogIn": "Resident login",
+    "staffLogIn": "Staff login"
   },
   "session": {
     "title": "Are you still there?",
@@ -32,7 +34,29 @@
       "loggingIn": "Logging in...",
       "logIn": "Log in",
       "settingUp": "Setting up a new building?",
-      "createOrg": "Create an organization"
+      "createOrg": "Create an organization",
+      "residentLink": "Resident? Log in here.",
+      "staffLink": "Staff member? Log in here."
+    },
+    "residentLogin": {
+      "title": "Resident log in",
+      "email": "Email",
+      "password": "Password",
+      "forgotPassword": "Forgot your password?",
+      "loggingIn": "Logging in...",
+      "logIn": "Log in",
+      "adminLink": "Organization admin? Log in here.",
+      "staffLink": "Staff member? Log in here."
+    },
+    "staffLogin": {
+      "title": "Staff log in",
+      "email": "Email",
+      "password": "Password",
+      "forgotPassword": "Forgot your password?",
+      "loggingIn": "Logging in...",
+      "logIn": "Log in",
+      "adminLink": "Organization admin? Log in here.",
+      "residentLink": "Resident? Log in here."
     },
     "forgotPassword": {
       "title": "Reset your password",
@@ -87,8 +111,6 @@
     "cancel": "Cancel"
   },
   "account": {
-    "heading": "My account",
-    "description": "Keep your contact information up to date.",
     "email": "Email",
     "phone": "Phone number",
     "save": "Save changes",
@@ -125,7 +147,8 @@
   },
   "announcements": {
     "heading": "Announcements",
-    "postAnnouncement": "Post announcement",
+    "postAnnouncement": "Create announcement",
+    "postedAnnouncements": "Posted Announcements",
     "search": "Search announcements...",
     "noAnnouncements": "No announcements yet",
     "view": "View",
@@ -154,5 +177,12 @@
     "unit": "Unit",
     "noUnitLinked": "no unit linked",
     "noResidents": "No residents yet"
+  },
+  "staff": {
+    "heading": "Staff",
+    "inviteStaff": "Invite staff",
+    "name": "Name",
+    "email": "Email",
+    "noStaff": "No staff yet"
   }
 }

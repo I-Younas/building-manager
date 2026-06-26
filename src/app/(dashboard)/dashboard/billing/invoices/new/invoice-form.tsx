@@ -5,9 +5,11 @@ import { createInvoice } from "@/lib/actions/invoices";
 import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
 type Unit = { id: string; unitNumber: string; buildingName: string };
+type Staff = { id: string; name: string };
 
-export function InvoiceForm({ units }: { units: Unit[] }) {
+export function InvoiceForm({ units, staff }: { units: Unit[]; staff: Staff[] }) {
   const [state, formAction, pending] = useActionState(createInvoice, undefined);
+  const [type, setType] = useState<"RENT" | "SERVICE">("RENT");
   const [rowIds, setRowIds] = useState([0]);
   const [nextId, setNextId] = useState(1);
 
@@ -23,18 +25,85 @@ export function InvoiceForm({ units }: { units: Unit[] }) {
   return (
     <form action={formAction} className={`${formStackClasses} max-w-2xl`}>
       <label className={labelClasses}>
-        Unit
-        <select name="unitId" required defaultValue="" className={inputClasses}>
-          <option value="" disabled>
-            Select a unit
-          </option>
-          {units.map((unit) => (
-            <option key={unit.id} value={unit.id}>
-              {unit.buildingName} / Unit {unit.unitNumber}
-            </option>
-          ))}
+        Invoice type
+        <select
+          name="type"
+          value={type}
+          onChange={(e) => setType(e.target.value as "RENT" | "SERVICE")}
+          className={inputClasses}
+        >
+          <option value="RENT">Rent (resident)</option>
+          <option value="SERVICE">Service (staff)</option>
         </select>
       </label>
+
+      {type === "RENT" ? (
+        <>
+          <label className={labelClasses}>
+            Unit
+            <select name="unitId" required defaultValue="" className={inputClasses}>
+              <option value="" disabled>
+                Select a unit
+              </option>
+              {units.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.buildingName} / Unit {unit.unitNumber}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="flex gap-3">
+            <label className={`${labelClasses} flex-1`}>
+              Rent period start
+              <input type="date" name="rentPeriodStart" required className={inputClasses} />
+            </label>
+            <label className={`${labelClasses} flex-1`}>
+              Rent period end
+              <input type="date" name="rentPeriodEnd" required className={inputClasses} />
+            </label>
+          </div>
+        </>
+      ) : (
+        <>
+          <label className={labelClasses}>
+            Staff member
+            <select name="billedToUserId" required defaultValue="" className={inputClasses}>
+              <option value="" disabled>
+                Select a staff member
+              </option>
+              {staff.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className={labelClasses}>
+            Service description
+            <textarea
+              name="serviceDescription"
+              required
+              maxLength={2000}
+              rows={3}
+              placeholder="Description of work completed"
+              className={inputClasses}
+            />
+          </label>
+
+          <div className="flex gap-3">
+            <label className={`${labelClasses} flex-1`}>
+              Service period start
+              <input type="date" name="servicePeriodStart" required className={inputClasses} />
+            </label>
+            <label className={`${labelClasses} flex-1`}>
+              Service period end
+              <input type="date" name="servicePeriodEnd" required className={inputClasses} />
+            </label>
+          </div>
+        </>
+      )}
 
       <label className={labelClasses}>
         Due date

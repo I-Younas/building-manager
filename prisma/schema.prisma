@@ -47,6 +47,11 @@ enum InvoiceStatus {
   VOID
 }
 
+enum InvoiceType {
+  RENT
+  SERVICE
+}
+
 enum PaymentMethod {
   CASH
   BANK_TRANSFER
@@ -129,6 +134,7 @@ model User {
   ticketComments                 TicketComment[]
   ticketStatusLogs               TicketStatusHistory[]
   issuedInvoices                 Invoice[]                       @relation("IssuedBy")
+  billedInvoices                 Invoice[]                       @relation("BilledTo")
   recordedPayments               Payment[]                       @relation("RecordedBy")
   postedAnnouncements            Announcement[]                  @relation("PostedBy")
   createdInvites                 InviteCode[]                    @relation("CreatedInvite")
@@ -236,12 +242,15 @@ model Unit {
 }
 
 model UnitResident {
-  id           String                    @id @default(cuid())
-  unitId       String
-  userId       String
-  relationship UnitResidentRelationship?
-  isPrimary    Boolean                   @default(false)
-  createdAt    DateTime                  @default(now())
+  id             String                    @id @default(cuid())
+  unitId         String
+  userId         String
+  relationship   UnitResidentRelationship?
+  isPrimary      Boolean                   @default(false)
+  leaseStartDate DateTime?
+  leaseEndDate   DateTime?
+  renewalSigned  Boolean                   @default(false)
+  createdAt      DateTime                  @default(now())
 
   unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -334,19 +343,27 @@ model TicketStatusHistory {
 // ---------- Module 3: Billing & Invoicing ----------
 
 model Invoice {
-  id             String        @id @default(cuid())
-  organizationId String
-  unitId         String
-  issuedById     String?
-  invoiceNumber  String
-  status         InvoiceStatus @default(DRAFT)
-  issueDate      DateTime
-  dueDate        DateTime
-  currency       String        @default("USD")
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id                 String        @id @default(cuid())
+  organizationId     String
+  unitId             String?
+  billedToUserId     String?
+  issuedById         String?
+  invoiceNumber      String
+  type               InvoiceType   @default(RENT)
+  status             InvoiceStatus @default(DRAFT)
+  issueDate          DateTime
+  dueDate            DateTime
+  currency           String        @default("USD")
+  rentPeriodStart    DateTime?
+  rentPeriodEnd      DateTime?
+  serviceDescription String?
+  servicePeriodStart DateTime?
+  servicePeriodEnd   DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
-  unit      Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  unit      Unit?             @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  billedTo  User?             @relation("BilledTo", fields: [billedToUserId], references: [id])
   issuedBy  User?             @relation("IssuedBy", fields: [issuedById], references: [id])
   lineItems InvoiceLineItem[]
   payments  Payment[]
@@ -354,6 +371,7 @@ model Invoice {
   @@unique([organizationId, invoiceNumber])
   @@index([organizationId, status])
   @@index([unitId])
+  @@index([billedToUserId])
 }
 
 model InvoiceLineItem {

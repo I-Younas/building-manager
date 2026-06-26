@@ -51,7 +51,7 @@ export default async function TicketDetailPage({
   let staffOptions: { id: string; name: string }[] = [];
   if (isStaffOrAdmin) {
     const staffMemberships = await prisma.orgMembership.findMany({
-      where: { organizationId, role: { in: ["STAFF", "ORG_ADMIN"] } },
+      where: { organizationId, role: "STAFF" },
       include: { user: true },
     });
     staffOptions = staffMemberships.map((m) => ({ id: m.user.id, name: m.user.name }));

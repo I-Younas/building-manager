@@ -12,7 +12,7 @@ export default async function InviteResidentPage({
 
   return (
     <div>
-      <PageHeader title="Invite a member" />
+      <PageHeader title="Invite a resident" />
       <Card className="max-w-lg">
         <InviteForm defaultBuildingName={buildingName} defaultUnitNumber={unitNumber} />
       </Card>

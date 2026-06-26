@@ -44,8 +44,16 @@ export default async function BuildingsPage() {
                         {building.name}
                       </Link>
                     </td>
-                    <td className={tdClasses}>{rented}</td>
-                    <td className={tdClasses}>{vacant}</td>
+                    <td className={tdClasses}>
+                      <Link href={`/dashboard/buildings/${building.id}/rented-units`} className="text-blue-600 hover:underline">
+                        {rented}
+                      </Link>
+                    </td>
+                    <td className={tdClasses}>
+                      <Link href={`/dashboard/buildings/${building.id}/vacant-units`} className="text-blue-600 hover:underline">
+                        {vacant}
+                      </Link>
+                    </td>
                   </tr>
                 );
               })}

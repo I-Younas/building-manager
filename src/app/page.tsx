@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getDictionary, getLocale } from "@/lib/i18n/get-dictionary";
 import { LocaleSwitcher } from "@/components/locale-switcher";
@@ -26,6 +27,14 @@ export default async function Home() {
           <LinkButton href="/login" variant="secondary" size="md">
             {dict.landing.logIn}
           </LinkButton>
+        </div>
+        <div className="mt-4 flex items-center justify-center gap-4 text-sm">
+          <Link href="/resident-login" className="font-medium text-blue-600 hover:underline">
+            {dict.landing.residentLogIn}
+          </Link>
+          <Link href="/staff-login" className="font-medium text-blue-600 hover:underline">
+            {dict.landing.staffLogIn}
+          </Link>
         </div>
       </div>
     </main>

@@ -2,12 +2,12 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { login } from "@/lib/actions/auth";
+import { residentLogin } from "@/lib/actions/auth";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
-export function LoginForm({ dict }: { dict: Dictionary["auth"]["login"] }) {
-  const [state, formAction, pending] = useActionState(login, undefined);
+export function ResidentLoginForm({ dict }: { dict: Dictionary["auth"]["residentLogin"] }) {
+  const [state, formAction, pending] = useActionState(residentLogin, undefined);
 
   return (
     <form action={formAction} className={formStackClasses}>
@@ -33,15 +33,8 @@ export function LoginForm({ dict }: { dict: Dictionary["auth"]["login"] }) {
       </Button>
 
       <p className="text-sm text-slate-500">
-        {dict.settingUp}{" "}
-        <Link href="/signup" className="font-medium text-blue-600 hover:underline">
-          {dict.createOrg}
-        </Link>
-      </p>
-
-      <p className="text-sm text-slate-500">
-        <Link href="/resident-login" className="font-medium text-blue-600 hover:underline">
-          {dict.residentLink}
+        <Link href="/login" className="font-medium text-blue-600 hover:underline">
+          {dict.adminLink}
         </Link>
       </p>
       <p className="text-sm text-slate-500">

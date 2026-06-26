@@ -4,13 +4,7 @@ import { useActionState, useState } from "react";
 import { createInviteCode } from "@/lib/actions/invites";
 import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
-export function InviteForm({
-  defaultBuildingName,
-  defaultUnitNumber,
-}: {
-  defaultBuildingName?: string;
-  defaultUnitNumber?: string;
-}) {
+export function StaffInviteForm() {
   const [state, formAction, pending] = useActionState(createInviteCode, undefined);
   const [email, setEmail] = useState("");
 
@@ -20,34 +14,7 @@ export function InviteForm({
 
   return (
     <form action={formAction} className={formStackClasses}>
-      <input type="hidden" name="role" value="RESIDENT" />
-
-      <label className={labelClasses}>
-        Building
-        <input
-          name="buildingName"
-          required
-          maxLength={200}
-          placeholder="e.g. Maple Towers"
-          defaultValue={defaultBuildingName ?? ""}
-          className={inputClasses}
-        />
-      </label>
-
-      <label className={labelClasses}>
-        Unit number
-        <input
-          name="unitNumber"
-          required
-          maxLength={50}
-          placeholder="e.g. 101"
-          defaultValue={defaultUnitNumber ?? ""}
-          className={inputClasses}
-        />
-      </label>
-      <p className="text-xs text-slate-500">
-        If this building or unit doesn&apos;t exist yet, it will be created automatically.
-      </p>
+      <input type="hidden" name="role" value="STAFF" />
 
       <label className={labelClasses}>
         Email

@@ -77,6 +77,10 @@ export default async function AnnouncementsPage({
         </form>
       ) : null}
 
+      {isAdmin ? (
+        <h2 className="mb-3 text-lg font-semibold text-slate-900">{dict.announcements.postedAnnouncements}</h2>
+      ) : null}
+
       {announcements.length === 0 ? (
         <EmptyState title={dict.announcements.noAnnouncements} />
       ) : (

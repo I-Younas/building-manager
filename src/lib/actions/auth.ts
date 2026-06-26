@@ -82,21 +82,12 @@ export async function signupOrgAdmin(
   redirect("/dashboard");
 }
 
-export async function login(
-  _prevState: AuthActionState,
-  formData: FormData,
+async function authenticateForRole(
+  email: string,
+  password: string,
+  role: "ORG_ADMIN" | "STAFF" | "RESIDENT",
+  wrongRoleMessage: string,
 ): Promise<AuthActionState> {
-  const parsed = loginSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-  });
-
-  if (!parsed.success) {
-    return { error: "Invalid email or password." };
-  }
-
-  const { email, password } = parsed.data;
-
   const user = await prisma.user.findUnique({
     where: { email },
     include: { memberships: { orderBy: { createdAt: "asc" } } },
@@ -111,9 +102,76 @@ export async function login(
     return { error: "Invalid email or password." };
   }
 
-  const activeOrganizationId = user.memberships[0]?.organizationId ?? null;
-  await createSession(user.id, activeOrganizationId);
+  const membership = user.memberships.find((m) => m.role === role);
+  if (!membership) {
+    return { error: wrongRoleMessage };
+  }
+
+  await createSession(user.id, membership.organizationId);
   redirect("/dashboard");
+}
+
+export async function login(
+  _prevState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const parsed = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!parsed.success) {
+    return { error: "Invalid email or password." };
+  }
+
+  return authenticateForRole(
+    parsed.data.email,
+    parsed.data.password,
+    "ORG_ADMIN",
+    "This account isn't an organization admin. Use the resident or staff login page instead.",
+  );
+}
+
+export async function residentLogin(
+  _prevState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const parsed = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!parsed.success) {
+    return { error: "Invalid email or password." };
+  }
+
+  return authenticateForRole(
+    parsed.data.email,
+    parsed.data.password,
+    "RESIDENT",
+    "This account isn't a resident account. Use the organization admin or staff login page instead.",
+  );
+}
+
+export async function staffLogin(
+  _prevState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const parsed = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!parsed.success) {
+    return { error: "Invalid email or password." };
+  }
+
+  return authenticateForRole(
+    parsed.data.email,
+    parsed.data.password,
+    "STAFF",
+    "This account isn't a staff account. Use the organization admin or resident login page instead.",
+  );
 }
 
 export async function logout() {

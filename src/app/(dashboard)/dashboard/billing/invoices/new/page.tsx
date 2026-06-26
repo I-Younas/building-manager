@@ -6,11 +6,18 @@ import { PageHeader } from "@/components/ui";
 export default async function NewInvoicePage() {
   const { organizationId } = await requireAdminOrStaff();
 
-  const units = await prisma.unit.findMany({
-    where: { organizationId },
-    include: { building: true },
-    orderBy: [{ building: { name: "asc" } }, { unitNumber: "asc" }],
-  });
+  const [units, staffMemberships] = await Promise.all([
+    prisma.unit.findMany({
+      where: { organizationId },
+      include: { building: true },
+      orderBy: [{ building: { name: "asc" } }, { unitNumber: "asc" }],
+    }),
+    prisma.orgMembership.findMany({
+      where: { organizationId, role: "STAFF" },
+      include: { user: true },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
 
   return (
     <div>
@@ -21,6 +28,7 @@ export default async function NewInvoicePage() {
           unitNumber: unit.unitNumber,
           buildingName: unit.building.name,
         }))}
+        staff={staffMemberships.map((m) => ({ id: m.user.id, name: m.user.name }))}
       />
     </div>
   );

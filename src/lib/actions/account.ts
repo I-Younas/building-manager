@@ -59,6 +59,6 @@ export async function updateContactInfo(
     }
   }
 
-  revalidatePath("/dashboard/account");
+  revalidatePath("/dashboard", "layout");
   return { success: true };
 }

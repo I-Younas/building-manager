@@ -43,7 +43,7 @@ export default async function NewAnnouncementPage({
 
   const sourceId = duplicateFrom || correctsFrom;
   let defaultValues: AnnouncementDefaultValues | undefined;
-  let title = "Post announcement";
+  let title = "Create announcement";
 
   if (sourceId) {
     const source = await prisma.announcement.findFirst({
@@ -70,7 +70,7 @@ export default async function NewAnnouncementPage({
         recurrenceEndsAt: null,
         correctsAnnouncementId: correctsFrom || null,
       };
-      title = correctsFrom ? "Send correction" : "Post announcement";
+      title = correctsFrom ? "Send correction" : "Create announcement";
     }
   }
 
@@ -84,7 +84,7 @@ export default async function NewAnnouncementPage({
         floors={floors}
         residents={residents}
         defaultValues={defaultValues}
-        submitLabel="Post announcement"
+        submitLabel="Create announcement"
       />
     </div>
   );

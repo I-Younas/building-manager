@@ -6,7 +6,7 @@
     "announcements": "Annonces",
     "buildings": "Immeubles",
     "residents": "Résidents",
-    "account": "Mon compte",
+    "staff": "Personnel",
     "logout": "Se déconnecter",
     "switchOrg": "Changer d'organisation"
   },
@@ -15,7 +15,9 @@
     "heading": "Un logiciel de gestion immobilière sans le prix d'une solution d'entreprise",
     "subtitle": "Entretien, paiements et annonces — tout ce dont un immeuble petit ou moyen a besoin, au même endroit.",
     "getStarted": "Commencer",
-    "logIn": "Se connecter"
+    "logIn": "Se connecter",
+    "residentLogIn": "Connexion résident",
+    "staffLogIn": "Connexion personnel"
   },
   "session": {
     "title": "Êtes-vous toujours là ?",
@@ -32,7 +34,29 @@
       "loggingIn": "Connexion...",
       "logIn": "Se connecter",
       "settingUp": "Vous créez un nouvel immeuble ?",
-      "createOrg": "Créer une organisation"
+      "createOrg": "Créer une organisation",
+      "residentLink": "Résident ? Connectez-vous ici.",
+      "staffLink": "Membre du personnel ? Connectez-vous ici."
+    },
+    "residentLogin": {
+      "title": "Connexion résident",
+      "email": "Courriel",
+      "password": "Mot de passe",
+      "forgotPassword": "Mot de passe oublié ?",
+      "loggingIn": "Connexion...",
+      "logIn": "Se connecter",
+      "adminLink": "Administrateur de l'organisation ? Connectez-vous ici.",
+      "staffLink": "Membre du personnel ? Connectez-vous ici."
+    },
+    "staffLogin": {
+      "title": "Connexion personnel",
+      "email": "Courriel",
+      "password": "Mot de passe",
+      "forgotPassword": "Mot de passe oublié ?",
+      "loggingIn": "Connexion...",
+      "logIn": "Se connecter",
+      "adminLink": "Administrateur de l'organisation ? Connectez-vous ici.",
+      "residentLink": "Résident ? Connectez-vous ici."
     },
     "forgotPassword": {
       "title": "Réinitialiser votre mot de passe",
@@ -87,8 +111,6 @@
     "cancel": "Annuler"
   },
   "account": {
-    "heading": "Mon compte",
-    "description": "Gardez vos coordonnées à jour.",
     "email": "Courriel",
     "phone": "Numéro de téléphone",
     "save": "Enregistrer les modifications",
@@ -125,7 +147,8 @@
   },
   "announcements": {
     "heading": "Annonces",
-    "postAnnouncement": "Publier une annonce",
+    "postAnnouncement": "Créer une annonce",
+    "postedAnnouncements": "Annonces publiées",
     "search": "Rechercher des annonces...",
     "noAnnouncements": "Aucune annonce pour le moment",
     "view": "Voir",
@@ -154,5 +177,12 @@
     "unit": "Unité",
     "noUnitLinked": "aucune unité associée",
     "noResidents": "Aucun résident pour le moment"
+  },
+  "staff": {
+    "heading": "Personnel",
+    "inviteStaff": "Inviter un membre du personnel",
+    "name": "Nom",
+    "email": "Courriel",
+    "noStaff": "Aucun membre du personnel pour le moment"
   }
 }

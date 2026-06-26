@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { removeUnitResident } from "@/lib/actions/units";
+import { LeaseForm } from "./lease-form";
 import { Button, Card, EmptyState, LinkButton, PageHeader } from "@/components/ui";
 
 export default async function UnitDetailPage({
@@ -46,20 +47,28 @@ export default async function UnitDetailPage({
       ) : (
         <div className="flex flex-col gap-3">
           {unit.residentLinks.map((link) => (
-            <Card key={link.id} className="flex items-center justify-between py-4">
-              <div>
-                <p className="font-medium text-slate-900">{link.user.name}</p>
-                <p className="text-sm text-slate-500">
-                  {link.user.email}
-                  {link.relationship ? ` · ${link.relationship.replace("_", " ")}` : ""}
-                  {link.isPrimary ? " · primary" : ""}
-                </p>
+            <Card key={link.id} className="py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-slate-900">{link.user.name}</p>
+                  <p className="text-sm text-slate-500">
+                    {link.user.email}
+                    {link.relationship ? ` · ${link.relationship.replace("_", " ")}` : ""}
+                    {link.isPrimary ? " · primary" : ""}
+                  </p>
+                </div>
+                <form action={removeUnitResident.bind(null, link.id)}>
+                  <Button type="submit" variant="danger" size="sm">
+                    Remove
+                  </Button>
+                </form>
               </div>
-              <form action={removeUnitResident.bind(null, link.id)}>
-                <Button type="submit" variant="danger" size="sm">
-                  Remove
-                </Button>
-              </form>
+              <LeaseForm
+                unitResidentId={link.id}
+                leaseStartDate={link.leaseStartDate}
+                leaseEndDate={link.leaseEndDate}
+                renewalSigned={link.renewalSigned}
+              />
             </Card>
           ))}
         </div>

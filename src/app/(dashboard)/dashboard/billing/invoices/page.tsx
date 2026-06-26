@@ -18,24 +18,26 @@ import {
 
 export default async function InvoicesPage() {
   const { user, organizationId, role } = await requireOrgScope();
-  const isAdmin = role !== "RESIDENT";
+  const isAdmin = role === "ORG_ADMIN";
 
-  let unitIdFilter: { in: string[] } | undefined;
-  if (!isAdmin) {
+  let scopeFilter: Record<string, unknown> = {};
+  if (role === "RESIDENT") {
     const myUnits = await prisma.unitResident.findMany({
       where: { userId: user.id, unit: { organizationId } },
       select: { unitId: true },
     });
-    unitIdFilter = { in: myUnits.map((link) => link.unitId) };
+    scopeFilter = { unitId: { in: myUnits.map((link) => link.unitId) } };
+  } else if (role === "STAFF") {
+    scopeFilter = { billedToUserId: user.id };
   }
 
   const invoices = await prisma.invoice.findMany({
     where: {
       organizationId,
-      ...(unitIdFilter ? { unitId: unitIdFilter } : {}),
+      ...scopeFilter,
       ...(isAdmin ? {} : { status: { not: "DRAFT" } }),
     },
-    include: { unit: { include: { building: true } }, lineItems: true },
+    include: { unit: { include: { building: true } }, billedTo: true, lineItems: true },
     orderBy: { createdAt: "desc" },
   });
 
@@ -54,7 +56,8 @@ export default async function InvoicesPage() {
             <thead className={theadClasses}>
               <tr>
                 <th className={thClasses}>Invoice</th>
-                <th className={thClasses}>Unit</th>
+                <th className={thClasses}>Type</th>
+                <th className={thClasses}>Billed to</th>
                 <th className={thClasses}>Total</th>
                 <th className={thClasses}>Status</th>
                 <th className={thClasses}>Due</th>
@@ -74,7 +77,14 @@ export default async function InvoicesPage() {
                       </Link>
                     </td>
                     <td className={tdClasses}>
-                      {invoice.unit.building.name} / Unit {invoice.unit.unitNumber}
+                      <StatusBadge status={invoice.type} />
+                    </td>
+                    <td className={tdClasses}>
+                      {invoice.type === "RENT" && invoice.unit
+                        ? `${invoice.unit.building.name} / Unit ${invoice.unit.unitNumber}`
+                        : invoice.billedTo
+                          ? `Staff: ${invoice.billedTo.name}`
+                          : "—"}
                     </td>
                     <td className={tdClasses}>{formatCents(total)}</td>
                     <td className={tdClasses}>
