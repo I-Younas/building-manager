@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { unitSchema } from "@/lib/validation/buildings";
@@ -45,7 +46,21 @@ export async function createUnit(
     },
   });
 
+  revalidatePath("/dashboard/buildings");
   revalidatePath(`/dashboard/buildings/${buildingId}`);
+}
+
+export async function createUnitFromForm(
+  _prevState: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  const buildingId = formData.get("buildingId");
+  if (!buildingId || typeof buildingId !== "string") {
+    return { error: "Please select a building." };
+  }
+  const result = await createUnit(buildingId, _prevState, formData);
+  if (result?.error) return result;
+  redirect("/dashboard/buildings");
 }
 
 export async function removeUnitResident(unitResidentId: string) {

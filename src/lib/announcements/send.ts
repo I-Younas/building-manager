@@ -86,13 +86,16 @@ export async function sendAnnouncementNow(announcementId: string) {
   return { recipientCount: recipients.length };
 }
 
-function advanceRecurrence(date: Date, recurrence: "WEEKLY" | "MONTHLY") {
+type AutoRecurrence = "DAILY" | "WEEKLY" | "BIWEEKLY" | "MONTHLY" | "QUARTERLY" | "YEARLY";
+
+function advanceRecurrence(date: Date, recurrence: AutoRecurrence) {
   const next = new Date(date);
-  if (recurrence === "WEEKLY") {
-    next.setDate(next.getDate() + 7);
-  } else {
-    next.setMonth(next.getMonth() + 1);
-  }
+  if (recurrence === "DAILY") next.setDate(next.getDate() + 1);
+  else if (recurrence === "WEEKLY") next.setDate(next.getDate() + 7);
+  else if (recurrence === "BIWEEKLY") next.setDate(next.getDate() + 14);
+  else if (recurrence === "MONTHLY") next.setMonth(next.getMonth() + 1);
+  else if (recurrence === "QUARTERLY") next.setMonth(next.getMonth() + 3);
+  else if (recurrence === "YEARLY") next.setFullYear(next.getFullYear() + 1);
   return next;
 }
 
@@ -109,7 +112,7 @@ export async function runDueAnnouncements(now: Date) {
   }
 
   const dueRecurring = await prisma.announcement.findMany({
-    where: { recurrence: { in: ["WEEKLY", "MONTHLY"] }, nextRunAt: { lte: now } },
+    where: { recurrence: { in: ["DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY", "QUARTERLY", "YEARLY"] }, nextRunAt: { lte: now } },
   });
   for (const announcement of dueRecurring) {
     if (announcement.recurrenceEndsAt && announcement.recurrenceEndsAt < now) {
@@ -117,7 +120,7 @@ export async function runDueAnnouncements(now: Date) {
       continue;
     }
     await sendAnnouncementNow(announcement.id);
-    const nextRunAt = advanceRecurrence(announcement.nextRunAt ?? now, announcement.recurrence as "WEEKLY" | "MONTHLY");
+    const nextRunAt = advanceRecurrence(announcement.nextRunAt ?? now, announcement.recurrence as AutoRecurrence);
     await prisma.announcement.update({
       where: { id: announcement.id },
       data: { status: "SENT", publishedAt: now, nextRunAt },

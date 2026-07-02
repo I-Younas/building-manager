@@ -5,8 +5,9 @@ import { createTicket } from "@/lib/actions/maintenance";
 import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
 type Unit = { id: string; unitNumber: string; buildingName: string };
+type StaffMember = { userId: string; name: string };
 
-export function NewTicketForm({ units }: { units: Unit[] }) {
+export function NewTicketForm({ units, staffMembers = [] }: { units: Unit[]; staffMembers?: StaffMember[] }) {
   const [state, formAction, pending] = useActionState(createTicket, undefined);
 
   return (
@@ -49,6 +50,20 @@ export function NewTicketForm({ units }: { units: Unit[] }) {
           <option value="URGENT">Urgent</option>
         </select>
       </label>
+
+      {staffMembers.length > 0 && (
+        <label className={labelClasses}>
+          Assign to (optional)
+          <select name="assigneeUserId" defaultValue="" className={inputClasses}>
+            <option value="">Unassigned</option>
+            {staffMembers.map((s) => (
+              <option key={s.userId} value={s.userId}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {state?.error ? <ErrorText>{state.error}</ErrorText> : null}
 

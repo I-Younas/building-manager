@@ -47,8 +47,8 @@ export default async function PendingUnitsPage({
 
   return (
     <div>
-      <Link href={`/dashboard/buildings/${building.id}`} className="text-sm text-blue-600 hover:underline">
-        ← {building.name}
+      <Link href="/dashboard/buildings" className="text-sm text-blue-600 hover:underline">
+        ← Buildings
       </Link>
       <PageHeader title={`${building.name} — Units pending lease setup`} />
 

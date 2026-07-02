@@ -12,7 +12,10 @@ import { sendInviteEmail, sendUnitSetupNeededEmail } from "@/lib/email";
 
 const INVITE_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
-export type CreateInviteState = { error: string } | { code: string; emailSent: boolean } | undefined;
+export type CreateInviteState =
+  | { error: string }
+  | { code: string; emailSent: boolean; buildingId?: string; buildingName?: string; unitNumber?: string }
+  | undefined;
 
 export async function createInviteCode(
   _prevState: CreateInviteState,
@@ -22,7 +25,7 @@ export async function createInviteCode(
 
   const parsed = createInviteSchema.safeParse({
     role: formData.get("role"),
-    buildingName: formData.get("buildingName") ?? undefined,
+    buildingId: formData.get("buildingId") ?? undefined,
     unitNumber: formData.get("unitNumber") ?? undefined,
     email: formData.get("email"),
     employeeId: formData.get("employeeId") ?? undefined,
@@ -32,38 +35,21 @@ export async function createInviteCode(
   }
 
   const { role, email } = parsed.data;
-  let unitId: string | null = null;
-
-  if (role === "STAFF" && !parsed.data.employeeId) {
-    return { error: "Enter an employee ID for a staff invite." };
-  }
+  let buildingId: string | null = null;
+  let buildingName: string | null = null;
+  let unitNumber: string | null = null;
 
   if (role === "RESIDENT") {
-    if (!parsed.data.buildingName || !parsed.data.unitNumber) {
-      return { error: "Enter a building and a unit number for a resident invite." };
+    if (!parsed.data.buildingId || !parsed.data.unitNumber?.trim()) {
+      return { error: "Select a building and enter a unit number." };
     }
-
-    let building = await prisma.building.findFirst({
-      where: { organizationId, name: { equals: parsed.data.buildingName, mode: "insensitive" } },
-    });
+    const building = await prisma.building.findFirst({ where: { id: parsed.data.buildingId, organizationId } });
     if (!building) {
-      building = await prisma.building.create({
-        data: {
-          organizationId,
-          name: parsed.data.buildingName,
-          addressLine1: "",
-          city: "",
-          country: "",
-        },
-      });
+      return { error: "Building not found." };
     }
-
-    const unit = await prisma.unit.upsert({
-      where: { buildingId_unitNumber: { buildingId: building.id, unitNumber: parsed.data.unitNumber } },
-      create: { organizationId, buildingId: building.id, unitNumber: parsed.data.unitNumber },
-      update: {},
-    });
-    unitId = unit.id;
+    buildingId = building.id;
+    buildingName = building.name;
+    unitNumber = parsed.data.unitNumber.trim();
   }
 
   const code = generateInviteCode();
@@ -75,7 +61,8 @@ export async function createInviteCode(
       organizationId,
       code,
       role,
-      unitId,
+      buildingId,
+      unitNumber,
       email,
       employeeId: role === "STAFF" ? parsed.data.employeeId : null,
       createdById: user.id,
@@ -96,7 +83,11 @@ export async function createInviteCode(
     console.error("Failed to send invite email:", err);
   }
 
-  return { code, emailSent };
+  return {
+    code,
+    emailSent,
+    ...(buildingId ? { buildingId, buildingName: buildingName ?? undefined, unitNumber: unitNumber ?? undefined } : {}),
+  };
 }
 
 export type RedeemInviteState = { error: string } | undefined;
@@ -183,6 +174,8 @@ export async function redeemInvite(
     return { error: "You're already a member of this organization." };
   }
 
+  let resolvedUnitId: string | null = invite.unitId;
+
   await prisma.$transaction(async (tx) => {
     await tx.orgMembership.create({
       data: {
@@ -193,10 +186,21 @@ export async function redeemInvite(
       },
     });
 
-    if (invite.role === "RESIDENT" && invite.unitId) {
-      await tx.unitResident.create({
-        data: { unitId: invite.unitId, userId },
-      });
+    if (invite.role === "RESIDENT") {
+      if (!resolvedUnitId && invite.buildingId && invite.unitNumber) {
+        const unit = await tx.unit.upsert({
+          where: { buildingId_unitNumber: { buildingId: invite.buildingId, unitNumber: invite.unitNumber } },
+          create: { organizationId: invite.organizationId, buildingId: invite.buildingId, unitNumber: invite.unitNumber },
+          update: {},
+        });
+        resolvedUnitId = unit.id;
+      }
+
+      if (resolvedUnitId) {
+        await tx.unitResident.create({
+          data: { unitId: resolvedUnitId, userId },
+        });
+      }
     }
 
     await tx.inviteCode.update({
@@ -205,8 +209,8 @@ export async function redeemInvite(
     });
   });
 
-  if (invite.role === "RESIDENT" && invite.unitId) {
-    const unit = await prisma.unit.findUnique({ where: { id: invite.unitId }, include: { building: true } });
+  if (invite.role === "RESIDENT" && resolvedUnitId) {
+    const unit = await prisma.unit.findUnique({ where: { id: resolvedUnitId }, include: { building: true } });
     const admins = await prisma.orgMembership.findMany({
       where: { organizationId: invite.organizationId, role: "ORG_ADMIN" },
       include: { user: true },

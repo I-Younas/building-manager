@@ -19,6 +19,7 @@ import {
 export default async function InvoicesPage() {
   const { user, organizationId, role } = await requireOrgScope();
   const isAdmin = role === "ORG_ADMIN";
+  const canCreate = role === "ORG_ADMIN" || role === "STAFF";
 
   let scopeFilter: Record<string, unknown> = {};
   if (role === "RESIDENT") {
@@ -45,7 +46,7 @@ export default async function InvoicesPage() {
     <div>
       <PageHeader
         title={isAdmin ? "Invoices" : "My invoices"}
-        actions={isAdmin ? <LinkButton href="/dashboard/billing/invoices/new">Create invoice</LinkButton> : null}
+        actions={canCreate ? <LinkButton href="/dashboard/billing/invoices/new">Create invoice</LinkButton> : null}
       />
 
       {invoices.length === 0 ? (

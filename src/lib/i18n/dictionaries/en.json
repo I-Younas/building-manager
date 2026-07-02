@@ -3,7 +3,7 @@
     "dashboard": "Dashboard",
     "maintenance": "Maintenance",
     "payments": "Payments",
-    "announcements": "Announcements",
+    "announcements": "Emails",
     "buildings": "Buildings",
     "residents": "Residents",
     "staff": "Staff",
@@ -15,7 +15,7 @@
     "heading": "Building management software, without the enterprise price tag",
     "subtitle": "Maintenance, billing, and announcements — everything a small or medium building needs, in one place.",
     "signUp": "Sign Up",
-    "signIn": "Sign In"
+    "signIn": "Log In"
   },
   "session": {
     "title": "Are you still there?",
@@ -115,8 +115,8 @@
     "myOpenTickets": "My open tickets",
     "outstandingInvoices": "Outstanding invoices",
     "myOutstandingInvoices": "My outstanding invoices",
-    "announcements": "Announcements",
-    "noAnnouncements": "No announcements yet"
+    "announcements": "Emails",
+    "noAnnouncements": "No emails yet"
   },
   "maintenance": {
     "heading": "Maintenance",
@@ -137,11 +137,11 @@
     "assign": "Assign"
   },
   "announcements": {
-    "heading": "Announcements",
-    "postAnnouncement": "Create announcement",
-    "postedAnnouncements": "Posted Announcements",
-    "search": "Search announcements...",
-    "noAnnouncements": "No announcements yet",
+    "heading": "Emails",
+    "postAnnouncement": "Create email",
+    "postedAnnouncements": "Sent Emails",
+    "search": "Search emails...",
+    "noAnnouncements": "No emails yet",
     "view": "View",
     "duplicate": "Duplicate",
     "iveReadThis": "I've read this",

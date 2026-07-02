@@ -42,7 +42,7 @@ export function BuildingForm({
         />
       </label>
       <label className={labelClasses}>
-        Address line 2
+        Address line 2 (optional)
         <input
           name="addressLine2"
           maxLength={200}

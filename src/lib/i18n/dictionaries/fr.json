@@ -3,7 +3,7 @@
     "dashboard": "Tableau de bord",
     "maintenance": "Entretien",
     "payments": "Paiements",
-    "announcements": "Annonces",
+    "announcements": "E-mails",
     "buildings": "Immeubles",
     "residents": "Résidents",
     "staff": "Personnel",
@@ -115,8 +115,8 @@
     "myOpenTickets": "Mes tickets ouverts",
     "outstandingInvoices": "Factures impayées",
     "myOutstandingInvoices": "Mes factures impayées",
-    "announcements": "Annonces",
-    "noAnnouncements": "Aucune annonce pour le moment"
+    "announcements": "E-mails",
+    "noAnnouncements": "Aucun e-mail pour le moment"
   },
   "maintenance": {
     "heading": "Entretien",
@@ -137,11 +137,11 @@
     "assign": "Assigner"
   },
   "announcements": {
-    "heading": "Annonces",
-    "postAnnouncement": "Créer une annonce",
-    "postedAnnouncements": "Annonces publiées",
-    "search": "Rechercher des annonces...",
-    "noAnnouncements": "Aucune annonce pour le moment",
+    "heading": "E-mails",
+    "postAnnouncement": "Créer un e-mail",
+    "postedAnnouncements": "E-mails envoyés",
+    "search": "Rechercher des e-mails...",
+    "noAnnouncements": "Aucun e-mail pour le moment",
     "view": "Voir",
     "duplicate": "Dupliquer",
     "iveReadThis": "J'ai lu ceci",

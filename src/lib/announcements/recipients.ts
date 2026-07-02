@@ -6,7 +6,7 @@ export type Recipient = { userId: string; email: string; name: string };
 type AnnouncementForRecipients = {
   id: string;
   organizationId: string;
-  audience: "ALL_ORG" | "BUILDINGS" | "UNITS" | "FLOORS" | "INDIVIDUALS";
+  audience: "ALL_ORG" | "BUILDINGS" | "UNITS" | "FLOORS" | "INDIVIDUALS" | "ALL_STAFF" | "INDIVIDUAL_STAFF";
   targetBuildingIds: string[];
   targetUnitIds: string[];
   targetFloors: string[];
@@ -17,7 +17,13 @@ export async function resolveRecipients(announcement: AnnouncementForRecipients)
 
   let baseUserIds: string[] = [];
 
-  if (audience === "ALL_ORG") {
+  if (audience === "ALL_STAFF") {
+    const memberships = await prisma.orgMembership.findMany({
+      where: { organizationId, role: "STAFF" },
+      select: { userId: true },
+    });
+    baseUserIds = memberships.map((m) => m.userId);
+  } else if (audience === "ALL_ORG") {
     const links = await prisma.unitResident.findMany({
       where: { unit: { organizationId } },
       select: { userId: true },

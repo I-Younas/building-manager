@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
-import { getUnitStatus, getDaysVacant } from "@/lib/leases/status";
+import { getUnitStatus } from "@/lib/leases/status";
 import { EmptyState, LinkButton, PageHeader, tableClasses, tableWrapClasses, tdClasses, thClasses, theadClasses, trClasses } from "@/components/ui";
 
 export default async function VacantUnitsPage({
@@ -33,13 +33,13 @@ export default async function VacantUnitsPage({
     .map((unit) => ({
       id: unit.id,
       unitNumber: unit.unitNumber,
-      daysVacant: getDaysVacant(unit, unit.leases[0] ?? null),
+      floor: unit.floor,
     }));
 
   return (
     <div>
-      <Link href={`/dashboard/buildings/${building.id}`} className="text-sm text-blue-600 hover:underline">
-        ← {building.name}
+      <Link href="/dashboard/buildings" className="text-sm text-blue-600 hover:underline">
+        ← Buildings
       </Link>
       <PageHeader title={`${building.name} — Vacant units`} />
 
@@ -51,7 +51,7 @@ export default async function VacantUnitsPage({
             <thead className={theadClasses}>
               <tr>
                 <th className={thClasses}>Unit</th>
-                <th className={thClasses}>Days vacant</th>
+                <th className={thClasses}>Floor</th>
                 <th className={thClasses}></th>
               </tr>
             </thead>
@@ -63,7 +63,7 @@ export default async function VacantUnitsPage({
                       Unit {unit.unitNumber}
                     </Link>
                   </td>
-                  <td className={tdClasses}>{unit.daysVacant}</td>
+                  <td className={tdClasses}>{unit.floor ?? "—"}</td>
                   <td className={tdClasses}>
                     <LinkButton
                       href={`/dashboard/residents/invite?buildingName=${encodeURIComponent(building.name)}&unitNumber=${encodeURIComponent(unit.unitNumber)}`}

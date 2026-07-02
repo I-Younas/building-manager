@@ -4,18 +4,14 @@ import { useActionState, useState } from "react";
 import { createInviteCode } from "@/lib/actions/invites";
 import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from "@/components/ui";
 
-export function InviteForm({
-  defaultBuildingName,
-  defaultUnitNumber,
-}: {
-  defaultBuildingName?: string;
-  defaultUnitNumber?: string;
-}) {
+type Building = { id: string; name: string };
+
+export function InviteForm({ buildings }: { buildings: Building[] }) {
   const [state, formAction, pending] = useActionState(createInviteCode, undefined);
   const [email, setEmail] = useState("");
 
-  const inviteLink = state && "code" in state ? `/invite/${state.code}` : null;
-  const emailSent = state && "code" in state ? state.emailSent : false;
+  const success = state && "code" in state ? state : null;
+  const inviteLink = success ? `/invite/${success.code}` : null;
   const error = state && "error" in state ? state.error : null;
 
   return (
@@ -24,14 +20,16 @@ export function InviteForm({
 
       <label className={labelClasses}>
         Building
-        <input
-          name="buildingName"
-          required
-          maxLength={200}
-          placeholder="e.g. Maple Towers"
-          defaultValue={defaultBuildingName ?? ""}
-          className={inputClasses}
-        />
+        <select name="buildingId" required defaultValue="" className={inputClasses}>
+          <option value="" disabled>
+            Select a building
+          </option>
+          {buildings.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
       </label>
 
       <label className={labelClasses}>
@@ -39,15 +37,11 @@ export function InviteForm({
         <input
           name="unitNumber"
           required
-          maxLength={50}
-          placeholder="e.g. 101"
-          defaultValue={defaultUnitNumber ?? ""}
+          maxLength={20}
+          placeholder="e.g. 101, 2A"
           className={inputClasses}
         />
       </label>
-      <p className="text-xs text-slate-500">
-        If this building or unit doesn&apos;t exist yet, it will be created automatically.
-      </p>
 
       <label className={labelClasses}>
         Email
@@ -67,13 +61,13 @@ export function InviteForm({
         {pending ? "Sending..." : "Send invite link"}
       </Button>
 
-      {inviteLink && emailSent ? (
+      {inviteLink && success?.emailSent ? (
         <div className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-800">
           Invite sent to <strong>{email}</strong>. The link expires in 7 days.
         </div>
       ) : null}
 
-      {inviteLink && !emailSent ? (
+      {inviteLink && !success?.emailSent ? (
         <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-800">
           The invite was created, but the email couldn&apos;t be sent automatically. Share this link with{" "}
           {email} manually (it expires in 7 days):

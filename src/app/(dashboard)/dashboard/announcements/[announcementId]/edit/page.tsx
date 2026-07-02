@@ -52,6 +52,14 @@ export default async function EditAnnouncementPage({
       floor: l.unit.floor,
     }));
 
+  const staffMemberships = await prisma.orgMembership.findMany({
+    where: { organizationId, role: "STAFF" },
+    include: { user: { select: { id: true, name: true } } },
+  });
+  const staffMembers = staffMemberships
+    .map((m) => ({ userId: m.user.id, name: m.user.name ?? m.user.id }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   const defaultValues: AnnouncementDefaultValues = {
     title: announcement.title,
     body: announcement.body,
@@ -62,10 +70,7 @@ export default async function EditAnnouncementPage({
     targetUnitIds: announcement.targetUnitIds,
     targetFloors: announcement.targetFloors,
     includeUserIds: announcement.recipientOverrides.filter((o) => o.mode === "INCLUDE").map((o) => o.userId),
-    expiresAt: announcement.expiresAt,
     allowReplies: announcement.allowReplies,
-    requireAcknowledgment: announcement.requireAcknowledgment,
-    acknowledgmentReminderDays: announcement.acknowledgmentReminderDays,
     scheduledAt: announcement.scheduledAt,
     recurrence: announcement.recurrence,
     recurrenceEndsAt: announcement.recurrenceEndsAt,
@@ -81,6 +86,7 @@ export default async function EditAnnouncementPage({
         units={units}
         floors={floors}
         residents={residents}
+        staffMembers={staffMembers}
         defaultValues={defaultValues}
         submitLabel="Save changes"
       />

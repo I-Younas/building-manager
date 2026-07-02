@@ -9,10 +9,12 @@ import { Button, ErrorText, formStackClasses, inputClasses, labelClasses } from 
 export function RedeemInviteForm({
   code,
   isResident,
+  lockedEmail,
   dict,
 }: {
   code: string;
   isResident: boolean;
+  lockedEmail?: string;
   dict: Dictionary["auth"]["invite"];
 }) {
   const [state, formAction, pending] = useActionState(redeemInvite.bind(null, code), undefined);
@@ -32,7 +34,14 @@ export function RedeemInviteForm({
 
       <label className={labelClasses}>
         {dict.email}
-        <input name="email" type="email" required className={inputClasses} />
+        <input
+          name="email"
+          type="email"
+          required
+          defaultValue={lockedEmail ?? ""}
+          readOnly={!!lockedEmail}
+          className={`${inputClasses} ${lockedEmail ? "bg-slate-50 text-slate-500" : ""}`}
+        />
       </label>
 
       <label className={labelClasses}>

@@ -21,7 +21,7 @@ type ParsedAnnouncement = {
   body: string;
   category: "GENERAL" | "MAINTENANCE" | "EMERGENCY" | "POLICY" | "EVENT" | "BILLING" | "AMENITY";
   priority: "NORMAL" | "IMPORTANT" | "URGENT";
-  audience: "ALL_ORG" | "BUILDINGS" | "UNITS" | "FLOORS" | "INDIVIDUALS";
+  audience: "ALL_ORG" | "BUILDINGS" | "UNITS" | "FLOORS" | "INDIVIDUALS" | "ALL_STAFF" | "INDIVIDUAL_STAFF";
   targetBuildingIds: string[];
   targetUnitIds: string[];
   targetFloors: string[];
@@ -32,17 +32,23 @@ type ParsedAnnouncement = {
   acknowledgmentReminderDays: number | null;
   status: "DRAFT" | "SCHEDULED" | "SENT";
   scheduledAt: Date | null;
-  recurrence: "NONE" | "WEEKLY" | "MONTHLY";
+  recurrence: "NONE" | "DAILY" | "WEEKLY" | "BIWEEKLY" | "MONTHLY" | "QUARTERLY" | "YEARLY" | "CUSTOM";
   recurrenceEndsAt: Date | null;
   nextRunAt: Date | null;
 };
 
 type ParseResult = { error: string } | { data: ParsedAnnouncement };
 
-function advanceRecurrence(date: Date, recurrence: "WEEKLY" | "MONTHLY") {
+type AutoRecurrence = "DAILY" | "WEEKLY" | "BIWEEKLY" | "MONTHLY" | "QUARTERLY" | "YEARLY";
+
+function advanceRecurrence(date: Date, recurrence: AutoRecurrence) {
   const next = new Date(date);
-  if (recurrence === "WEEKLY") next.setDate(next.getDate() + 7);
-  else next.setMonth(next.getMonth() + 1);
+  if (recurrence === "DAILY") next.setDate(next.getDate() + 1);
+  else if (recurrence === "WEEKLY") next.setDate(next.getDate() + 7);
+  else if (recurrence === "BIWEEKLY") next.setDate(next.getDate() + 14);
+  else if (recurrence === "MONTHLY") next.setMonth(next.getMonth() + 1);
+  else if (recurrence === "QUARTERLY") next.setMonth(next.getMonth() + 3);
+  else if (recurrence === "YEARLY") next.setFullYear(next.getFullYear() + 1);
   return next;
 }
 
@@ -58,9 +64,7 @@ async function parseAnnouncementForm(formData: FormData, organizationId: string)
     targetFloors: formData.getAll("targetFloors"),
     includeUserIds: formData.getAll("includeUserIds"),
     expiresAt: formData.get("expiresAt") ?? undefined,
-    allowReplies: formData.get("allowReplies") === "on",
-    requireAcknowledgment: formData.get("requireAcknowledgment") === "on",
-    acknowledgmentReminderDays: formData.get("acknowledgmentReminderDays") || undefined,
+    allowReplies: formData.get("allowReplies") === "yes",
     sendTiming: formData.get("sendTiming"),
     scheduledAt: formData.get("scheduledAt") ?? undefined,
     recurrence: formData.get("recurrence") ?? "NONE",
@@ -119,6 +123,10 @@ async function parseAnnouncementForm(formData: FormData, organizationId: string)
     return { error: "Select at least one resident." };
   }
 
+  if (data.audience === "INDIVIDUAL_STAFF" && data.includeUserIds.length === 0) {
+    return { error: "Select at least one staff member." };
+  }
+
   let expiresAt: Date | null = null;
   if (data.expiresAt) {
     expiresAt = new Date(data.expiresAt);
@@ -140,16 +148,21 @@ async function parseAnnouncementForm(formData: FormData, organizationId: string)
     if (Number.isNaN(recurrenceEndsAt.getTime())) return { error: "Enter a valid recurrence end date." };
   }
 
-  if (data.requireAcknowledgment && !data.acknowledgmentReminderDays) {
-    return { error: "Set how many days to wait before sending an acknowledgment reminder." };
-  }
-
   const status: ParsedAnnouncement["status"] =
     data.sendTiming === "DRAFT" ? "DRAFT" : data.sendTiming === "SCHEDULE" ? "SCHEDULED" : "SENT";
 
   let nextRunAt: Date | null = null;
+  const recurrenceStartAtRaw = formData.get("recurrenceStartAt") as string | null;
   if (data.recurrence !== "NONE") {
-    nextRunAt = data.sendTiming === "SCHEDULE" ? scheduledAt : advanceRecurrence(new Date(), data.recurrence);
+    if (recurrenceStartAtRaw) {
+      nextRunAt = new Date(recurrenceStartAtRaw);
+    } else if (data.recurrence === "CUSTOM") {
+      nextRunAt = null;
+    } else if (data.sendTiming === "SCHEDULE") {
+      nextRunAt = scheduledAt;
+    } else {
+      nextRunAt = advanceRecurrence(new Date(), data.recurrence as AutoRecurrence);
+    }
   }
 
   return {
@@ -162,11 +175,11 @@ async function parseAnnouncementForm(formData: FormData, organizationId: string)
       targetBuildingIds: data.audience === "BUILDINGS" ? data.targetBuildingIds : [],
       targetUnitIds: data.audience === "UNITS" ? data.targetUnitIds : [],
       targetFloors: data.audience === "FLOORS" ? data.targetFloors : [],
-      includeUserIds: data.audience === "INDIVIDUALS" ? data.includeUserIds : [],
+      includeUserIds: (data.audience === "INDIVIDUALS" || data.audience === "INDIVIDUAL_STAFF") ? data.includeUserIds : [],
       expiresAt,
       allowReplies: data.allowReplies,
-      requireAcknowledgment: data.requireAcknowledgment,
-      acknowledgmentReminderDays: data.requireAcknowledgment ? data.acknowledgmentReminderDays ?? null : null,
+      requireAcknowledgment: false,
+      acknowledgmentReminderDays: null,
       status,
       scheduledAt,
       recurrence: data.recurrence,

@@ -43,7 +43,7 @@ export async function createBuilding(
     data: { organizationId, ...parsed.data },
   });
 
-  redirect(`/dashboard/buildings/${building.id}`);
+  redirect(`/dashboard/buildings`);
 }
 
 export async function updateBuilding(
@@ -74,7 +74,7 @@ export async function updateBuilding(
     return { error: "Building not found." };
   }
 
-  redirect(`/dashboard/buildings/${buildingId}`);
+  redirect(`/dashboard/buildings`);
 }
 
 export async function deleteBuilding(

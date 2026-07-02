@@ -3,18 +3,7 @@ import { notFound } from "next/navigation";
 import { requireOrgScope } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
-import {
-  Card,
-  LinkButton,
-  PageHeader,
-  StatusBadge,
-  tableClasses,
-  tableWrapClasses,
-  tdClasses,
-  theadClasses,
-  thClasses,
-  trClasses,
-} from "@/components/ui";
+import { Card, PageHeader, StatusBadge } from "@/components/ui";
 
 export default async function AnnouncementDetailPage({
   params,
@@ -32,13 +21,9 @@ export default async function AnnouncementDetailPage({
     include: {
       postedBy: true,
       attachments: true,
-      deliveries: { include: { user: true }, orderBy: { email: "asc" } },
-      acknowledgments: true,
     },
   });
   if (!announcement) notFound();
-
-  const acknowledgedIds = new Set(announcement.acknowledgments.map((a) => a.userId));
 
   return (
     <div>
@@ -49,11 +34,6 @@ export default async function AnnouncementDetailPage({
           <>
             <StatusBadge status={announcement.status} />
             <StatusBadge status={announcement.priority} />
-            {announcement.status === "SENT" ? (
-              <LinkButton href={`/dashboard/announcements/new?correctsFrom=${announcement.id}`} variant="secondary">
-                Send correction
-              </LinkButton>
-            ) : null}
           </>
         }
       />
@@ -82,45 +62,6 @@ export default async function AnnouncementDetailPage({
         ) : null}
       </Card>
 
-      <h2 className="mb-3 text-lg font-semibold text-slate-900">Delivery</h2>
-      {announcement.deliveries.length === 0 ? (
-        <p className="text-sm text-slate-500">Not sent yet.</p>
-      ) : (
-        <div className={tableWrapClasses}>
-          <table className={tableClasses}>
-            <thead className={theadClasses}>
-              <tr>
-                <th className={thClasses}>Recipient</th>
-                <th className={thClasses}>Status</th>
-                <th className={thClasses}>Sent</th>
-                <th className={thClasses}>Delivered</th>
-                <th className={thClasses}>Opened</th>
-                <th className={thClasses}>Clicked</th>
-                {announcement.requireAcknowledgment ? <th className={thClasses}>Acknowledged</th> : null}
-              </tr>
-            </thead>
-            <tbody>
-              {announcement.deliveries.map((d) => (
-                <tr key={d.id} className={trClasses}>
-                  <td className={tdClasses}>
-                    {d.user.name} ({d.email})
-                  </td>
-                  <td className={tdClasses}>
-                    <StatusBadge status={d.status} />
-                  </td>
-                  <td className={tdClasses}>{d.sentAt ? formatDateTime(d.sentAt) : "—"}</td>
-                  <td className={tdClasses}>{d.deliveredAt ? formatDateTime(d.deliveredAt) : "—"}</td>
-                  <td className={tdClasses}>{d.openedAt ? formatDateTime(d.openedAt) : "—"}</td>
-                  <td className={tdClasses}>{d.clickedAt ? formatDateTime(d.clickedAt) : "—"}</td>
-                  {announcement.requireAcknowledgment ? (
-                    <td className={tdClasses}>{acknowledgedIds.has(d.userId) ? "Yes" : "No"}</td>
-                  ) : null}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }

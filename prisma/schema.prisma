@@ -52,6 +52,17 @@ enum InvoiceType {
   SERVICE
 }
 
+enum InvoiceRecurrence {
+  NONE
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
+}
+
 enum PaymentMethod {
   CASH
   BANK_TRANSFER
@@ -67,6 +78,8 @@ enum AnnouncementAudience {
   UNITS
   FLOORS
   INDIVIDUALS
+  ALL_STAFF
+  INDIVIDUAL_STAFF
 }
 
 enum AnnouncementCategory {
@@ -93,8 +106,13 @@ enum AnnouncementStatus {
 
 enum AnnouncementRecurrence {
   NONE
+  DAILY
   WEEKLY
+  BIWEEKLY
   MONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
 }
 
 enum RecipientOverrideMode {
@@ -236,6 +254,7 @@ model Building {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   units        Unit[]
+  inviteCodes  InviteCode[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
@@ -316,6 +335,8 @@ model InviteCode {
   code           String                    @unique
   role           OrgRole
   unitId         String?
+  buildingId     String?
+  unitNumber     String?
   relationship   UnitResidentRelationship?
   email          String?
   employeeId     String?
@@ -328,6 +349,7 @@ model InviteCode {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdBy    User         @relation("CreatedInvite", fields: [createdById], references: [id])
   unit         Unit?        @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  building     Building?    @relation(fields: [buildingId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
 }
@@ -410,8 +432,12 @@ model Invoice {
   serviceDescription String?
   servicePeriodStart DateTime?
   servicePeriodEnd   DateTime?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  recurrence              InvoiceRecurrence @default(NONE)
+  recurrenceStartAt       DateTime?
+  recurrenceEndsAt        DateTime?
+  stripeCheckoutSessionId String?           @unique
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
 
   unit      Unit?             @relation(fields: [unitId], references: [id], onDelete: Cascade)
   billedTo  User?             @relation("BilledTo", fields: [billedToUserId], references: [id])

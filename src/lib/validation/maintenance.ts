@@ -6,6 +6,7 @@ export const createTicketSchema = z.object({
   description: z.string().trim().min(1, "Description is required").max(5000),
   category: z.string().trim().max(100).optional().or(z.literal("")),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
+  assigneeUserId: z.string().trim().optional().or(z.literal("")),
 });
 
 export const ticketStatusSchema = z.object({

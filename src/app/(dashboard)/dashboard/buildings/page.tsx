@@ -3,7 +3,17 @@ import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { getUnitStatus } from "@/lib/leases/status";
-import { EmptyState, LinkButton, PageHeader, tableClasses, tableWrapClasses, tdClasses, thClasses, theadClasses, trClasses } from "@/components/ui";
+import {
+  EmptyState,
+  LinkButton,
+  PageHeader,
+  tableClasses,
+  tableWrapClasses,
+  tdClasses,
+  thClasses,
+  theadClasses,
+  trClasses,
+} from "@/components/ui";
 
 export default async function BuildingsPage() {
   const { organizationId } = await requireAdminOrStaff();
@@ -26,7 +36,12 @@ export default async function BuildingsPage() {
     <div>
       <PageHeader
         title={dict.buildings.heading}
-        actions={<LinkButton href="/dashboard/buildings/new">{dict.buildings.addBuilding}</LinkButton>}
+        actions={
+          <div className="flex items-center gap-3">
+            <LinkButton href="/dashboard/buildings/new">{dict.buildings.addBuilding}</LinkButton>
+            <LinkButton href="/dashboard/units/new">{dict.buildings.addUnit}</LinkButton>
+          </div>
+        }
       />
 
       {buildings.length === 0 ? (
@@ -40,6 +55,7 @@ export default async function BuildingsPage() {
                 <th className={thClasses}>{dict.buildings.units}</th>
                 <th className={thClasses}>{dict.buildings.rentedUnits}</th>
                 <th className={thClasses}>{dict.buildings.vacantUnits}</th>
+                <th className={thClasses}></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -51,18 +67,22 @@ export default async function BuildingsPage() {
                 return (
                   <tr key={building.id} className={trClasses}>
                     <td className={tdClasses}>
-                      <Link href={`/dashboard/buildings/${building.id}`} className="font-medium text-blue-600 hover:underline">
-                        {building.name}
-                      </Link>
+                      <span className="font-medium text-slate-900">{building.name}</span>
                     </td>
                     <td className={tdClasses}>{building.units.length}</td>
                     <td className={tdClasses}>
-                      <Link href={`/dashboard/buildings/${building.id}/rented-units`} className="text-blue-600 hover:underline">
+                      <Link
+                        href={`/dashboard/buildings/${building.id}/rented-units`}
+                        className="text-blue-600 hover:underline"
+                      >
                         {rented}
                       </Link>
                     </td>
                     <td className={tdClasses}>
-                      <Link href={`/dashboard/buildings/${building.id}/vacant-units`} className="text-blue-600 hover:underline">
+                      <Link
+                        href={`/dashboard/buildings/${building.id}/vacant-units`}
+                        className="text-blue-600 hover:underline"
+                      >
                         {vacant}
                       </Link>
                       {pending > 0 ? (
@@ -73,6 +93,14 @@ export default async function BuildingsPage() {
                           {pending} {dict.buildings.pendingUnits}
                         </Link>
                       ) : null}
+                    </td>
+                    <td className={tdClasses}>
+                      <Link
+                        href={`/dashboard/buildings/${building.id}/edit`}
+                        className="text-sm text-blue-600 hover:underline"
+                      >
+                        {dict.common.edit}
+                      </Link>
                     </td>
                   </tr>
                 );

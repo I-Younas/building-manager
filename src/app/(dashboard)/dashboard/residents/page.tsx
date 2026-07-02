@@ -12,6 +12,7 @@ import {
   theadClasses,
   trClasses,
 } from "@/components/ui";
+import { DeleteResidentButton } from "./delete-resident-button";
 
 export default async function ResidentsPage() {
   const { organizationId } = await requireAdminOrStaff();
@@ -46,6 +47,7 @@ export default async function ResidentsPage() {
                 <th className={thClasses}>{dict.residents.name}</th>
                 <th className={thClasses}>{dict.residents.email}</th>
                 <th className={thClasses}>{dict.residents.unit}</th>
+                <th className={thClasses}></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -62,6 +64,9 @@ export default async function ResidentsPage() {
                       {units.length > 0
                         ? units.map((link) => `${link.unit.building.name} / Unit ${link.unit.unitNumber}`).join(", ")
                         : dict.residents.noUnitLinked}
+                    </td>
+                    <td className={tdClasses}>
+                      <DeleteResidentButton membershipId={membership.id} name={membership.user.name} />
                     </td>
                   </tr>
                 );

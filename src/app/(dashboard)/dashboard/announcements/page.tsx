@@ -14,7 +14,7 @@ export default async function AnnouncementsPage({
 }) {
   const { user, organizationId, role } = await requireOrgScope();
   const dict = await getDictionary();
-  const isAdmin = role !== "RESIDENT";
+  const isAdmin = role === "ORG_ADMIN";
   const { q } = await searchParams;
 
   let unitIds: string[] = [];
@@ -31,6 +31,7 @@ export default async function AnnouncementsPage({
       ...new Set(myUnits.filter((link) => link.unit.floor).map((link) => `${link.unit.buildingId}::${link.unit.floor}`)),
     ];
   }
+  // Staff has no unit memberships so arrays stay empty — they only see ALL_ORG announcements
 
   const where: Prisma.AnnouncementWhereInput = {
     organizationId,
@@ -43,6 +44,7 @@ export default async function AnnouncementsPage({
             {
               OR: [
                 { audience: "ALL_ORG" },
+                ...(role === "STAFF" ? [{ audience: "ALL_STAFF" as const }] : []),
                 { audience: "BUILDINGS", targetBuildingIds: { hasSome: buildingIds } },
                 { audience: "UNITS", targetUnitIds: { hasSome: unitIds } },
                 { audience: "FLOORS", targetFloors: { hasSome: floorKeys } },
@@ -68,7 +70,7 @@ export default async function AnnouncementsPage({
     <div>
       <PageHeader
         title={dict.announcements.heading}
-        actions={isAdmin ? <LinkButton href="/dashboard/announcements/new">{dict.announcements.postAnnouncement}</LinkButton> : null}
+        actions={isAdmin ? <LinkButton href="/dashboard/announcements/new">Create email</LinkButton> : null}
       />
 
       {isAdmin ? (
@@ -133,12 +135,6 @@ export default async function AnnouncementsPage({
                         {dict.common.edit}
                       </Link>
                     ) : null}
-                    <Link
-                      href={`/dashboard/announcements/new?duplicateFrom=${announcement.id}`}
-                      className="text-sm font-medium text-blue-600 hover:underline"
-                    >
-                      {dict.announcements.duplicate}
-                    </Link>
                     <form action={deleteAnnouncement.bind(null, announcement.id)}>
                       <Button type="submit" variant="danger" size="sm">
                         {dict.common.delete}

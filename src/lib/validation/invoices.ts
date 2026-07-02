@@ -18,6 +18,12 @@ export const createInvoiceSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
+export const invoiceRecurrenceSchema = z.object({
+  recurrence: z.enum(["NONE", "DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY", "QUARTERLY", "YEARLY", "CUSTOM"]).default("NONE"),
+  recurrenceStartAt: z.string().optional().or(z.literal("")),
+  recurrenceEndsAt: z.string().optional().or(z.literal("")),
+});
+
 export const recordPaymentSchema = z.object({
   amountCents: z.coerce.number().int().positive("Enter a valid amount"),
   method: z.enum(["CASH", "BANK_TRANSFER", "CHEQUE", "CARD", "ONLINE", "OTHER"]),

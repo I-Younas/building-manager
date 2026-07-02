@@ -41,9 +41,17 @@ export default async function NewAnnouncementPage({
       floor: l.unit.floor,
     }));
 
+  const staffMemberships = await prisma.orgMembership.findMany({
+    where: { organizationId, role: "STAFF" },
+    include: { user: { select: { id: true, name: true } } },
+  });
+  const staffMembers = staffMemberships
+    .map((m) => ({ userId: m.user.id, name: m.user.name ?? m.user.id }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   const sourceId = duplicateFrom || correctsFrom;
   let defaultValues: AnnouncementDefaultValues | undefined;
-  let title = "Create announcement";
+  let title = "Create email";
 
   if (sourceId) {
     const source = await prisma.announcement.findFirst({
@@ -61,16 +69,13 @@ export default async function NewAnnouncementPage({
         targetUnitIds: source.targetUnitIds,
         targetFloors: source.targetFloors,
         includeUserIds: source.recipientOverrides.filter((o) => o.mode === "INCLUDE").map((o) => o.userId),
-        expiresAt: source.expiresAt,
         allowReplies: source.allowReplies,
-        requireAcknowledgment: source.requireAcknowledgment,
-        acknowledgmentReminderDays: source.acknowledgmentReminderDays,
         scheduledAt: null,
         recurrence: "NONE",
         recurrenceEndsAt: null,
         correctsAnnouncementId: correctsFrom || null,
       };
-      title = correctsFrom ? "Send correction" : "Create announcement";
+      title = correctsFrom ? "Send correction" : "Create email";
     }
   }
 
@@ -83,8 +88,9 @@ export default async function NewAnnouncementPage({
         units={units}
         floors={floors}
         residents={residents}
+        staffMembers={staffMembers}
         defaultValues={defaultValues}
-        submitLabel="Create announcement"
+        submitLabel="Send email"
       />
     </div>
   );

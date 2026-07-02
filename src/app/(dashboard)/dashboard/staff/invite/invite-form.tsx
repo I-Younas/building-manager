@@ -29,8 +29,8 @@ export function StaffInviteForm() {
       </label>
 
       <label className={labelClasses}>
-        Employee ID
-        <input name="employeeId" required maxLength={50} className={inputClasses} />
+        Employee ID (optional)
+        <input name="employeeId" maxLength={50} className={inputClasses} />
       </label>
 
       {error ? <ErrorText>{error}</ErrorText> : null}

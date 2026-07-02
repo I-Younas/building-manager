@@ -1,0 +1,2 @@
+ALTER TYPE "AnnouncementAudience" ADD VALUE 'ALL_STAFF';
+ALTER TYPE "AnnouncementAudience" ADD VALUE 'INDIVIDUAL_STAFF';

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { formatCents } from "@/lib/money";
 import { getDisplayStatus } from "@/lib/invoice-status";
 import { issueInvoice, voidInvoice } from "@/lib/actions/invoices";
+import { createCheckoutSession } from "@/lib/actions/stripe";
 import { PaymentForm } from "./payment-form";
 import {
   Button,
@@ -19,11 +20,14 @@ import {
 
 export default async function InvoiceDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ invoiceId: string }>;
+  searchParams: Promise<{ paid?: string }>;
 }) {
   const { user, organizationId, role } = await requireOrgScope();
   const { invoiceId } = await params;
+  const { paid } = await searchParams;
   const isAdmin = role === "ORG_ADMIN";
 
   const invoice = await prisma.invoice.findFirst({
@@ -64,6 +68,11 @@ export default async function InvoiceDetailPage({
 
   return (
     <div>
+      {paid === "1" ? (
+        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          Payment received — thank you. Your invoice has been updated.
+        </div>
+      ) : null}
       <PageHeader
         title={invoice.invoiceNumber}
         description={subtitle}
@@ -160,6 +169,15 @@ export default async function InvoiceDetailPage({
           <h2 className="mb-3 text-lg font-semibold text-slate-900">Record a payment</h2>
           <PaymentForm invoiceId={invoice.id} />
         </>
+      ) : null}
+
+      {!isAdmin && ["ISSUED", "PARTIALLY_PAID", "OVERDUE"].includes(invoice.status) && balanceCents > 0 ? (
+        <div className="mt-6">
+          <h2 className="mb-3 text-lg font-semibold text-slate-900">Pay online</h2>
+          <form action={createCheckoutSession.bind(null, invoice.id)}>
+            <Button type="submit">Pay with card</Button>
+          </form>
+        </div>
       ) : null}
     </div>
   );

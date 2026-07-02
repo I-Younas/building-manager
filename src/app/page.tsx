@@ -15,15 +15,7 @@ export default async function Home() {
     <main className="flex min-h-screen flex-col px-6">
       <nav className="flex items-center justify-between py-6">
         <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">{dict.landing.tagline}</p>
-        <div className="flex items-center gap-4">
-          <LocaleSwitcher locale={locale} />
-          <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900">
-            {dict.landing.signIn}
-          </Link>
-          <LinkButton href="/signup" size="sm">
-            {dict.landing.signUp}
-          </LinkButton>
-        </div>
+        <LocaleSwitcher locale={locale} />
       </nav>
 
       <div className="flex flex-1 flex-col items-center justify-center">

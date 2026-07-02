@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdminOrStaff } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
-import { createInvoiceSchema } from "@/lib/validation/invoices";
+import { createInvoiceSchema, invoiceRecurrenceSchema } from "@/lib/validation/invoices";
 import { dollarsToCents } from "@/lib/money";
 
 export type FormActionState = { error: string } | undefined;
@@ -127,6 +127,17 @@ export async function createInvoice(
     return { error: "Add at least one line item." };
   }
 
+  const recurrenceParsed = invoiceRecurrenceSchema.safeParse({
+    recurrence: formData.get("recurrence") ?? "NONE",
+    recurrenceStartAt: formData.get("recurrenceStartAt") ?? "",
+    recurrenceEndsAt: formData.get("recurrenceEndsAt") ?? "",
+  });
+  const recurrence = recurrenceParsed.success ? recurrenceParsed.data.recurrence : "NONE";
+  const recurrenceStartAtRaw = recurrenceParsed.success ? recurrenceParsed.data.recurrenceStartAt : "";
+  const recurrenceStartAt = recurrenceStartAtRaw ? new Date(recurrenceStartAtRaw) : null;
+  const recurrenceEndsAtRaw = recurrenceParsed.success ? recurrenceParsed.data.recurrenceEndsAt : "";
+  const recurrenceEndsAt = recurrenceEndsAtRaw ? new Date(recurrenceEndsAtRaw) : null;
+
   const invoice = await prisma.$transaction(async (tx) => {
     const count = await tx.invoice.count({ where: { organizationId } });
     const invoiceNumber = `INV-${String(count + 1).padStart(4, "0")}`;
@@ -137,6 +148,9 @@ export async function createInvoice(
         invoiceNumber,
         issueDate: new Date(),
         dueDate,
+        recurrence,
+        recurrenceStartAt,
+        recurrenceEndsAt,
         ...invoiceData,
         lineItems: { create: lineItems },
       },

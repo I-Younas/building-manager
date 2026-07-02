@@ -28,15 +28,33 @@ function toIsoDate(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
-export function DatePicker({ name, defaultValue }: { name: string; defaultValue?: string }) {
+export function DatePicker({
+  name,
+  defaultValue,
+  startYear,
+  startMonth = 0,
+  maxYear,
+  upward = false,
+  onChange,
+}: {
+  name: string;
+  defaultValue?: string;
+  startYear?: number;
+  startMonth?: number;
+  maxYear?: number;
+  upward?: boolean;
+  onChange?: (value: string) => void;
+}) {
   const [value, setValue] = useState(defaultValue ?? "");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const currentYear = new Date().getFullYear();
   const initial = value ? new Date(value) : null;
-  const defaultViewYear = new Date().getFullYear() - 18;
-  const [viewYear, setViewYear] = useState(initial ? initial.getFullYear() : defaultViewYear);
-  const [viewMonth, setViewMonth] = useState(initial ? initial.getMonth() : 0);
+  const resolvedStartYear = startYear ?? currentYear - 18;
+  const resolvedMaxYear = maxYear ?? currentYear;
+  const [viewYear, setViewYear] = useState(initial ? initial.getFullYear() : resolvedStartYear);
+  const [viewMonth, setViewMonth] = useState(initial ? initial.getMonth() : startMonth);
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
@@ -49,7 +67,7 @@ export function DatePicker({ name, defaultValue }: { name: string; defaultValue?
   }, []);
 
   const years: number[] = [];
-  for (let y = new Date().getFullYear(); y >= 1900; y--) years.push(y);
+  for (let y = resolvedMaxYear; y >= 1900; y--) years.push(y);
 
   const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
   const totalDays = daysInMonth(viewYear, viewMonth);
@@ -63,7 +81,9 @@ export function DatePicker({ name, defaultValue }: { name: string; defaultValue?
     : "Select date";
 
   function selectDay(day: number) {
-    setValue(toIsoDate(viewYear, viewMonth, day));
+    const iso = toIsoDate(viewYear, viewMonth, day);
+    setValue(iso);
+    onChange?.(iso);
     setOpen(false);
   }
 
@@ -79,7 +99,7 @@ export function DatePicker({ name, defaultValue }: { name: string; defaultValue?
       </button>
 
       {open ? (
-        <div className="absolute z-20 mt-1 w-72 rounded-md border border-slate-200 bg-white p-3 shadow-lg">
+        <div className={`absolute z-20 w-72 rounded-md border border-slate-200 bg-white p-3 shadow-lg ${upward ? "bottom-full mb-1" : "mt-1"}`}>
           <div className="mb-2 flex gap-2">
             <select
               value={viewMonth}

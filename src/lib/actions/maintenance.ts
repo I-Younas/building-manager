@@ -17,17 +17,9 @@ export async function createTicket(
   _prevState: FormActionState,
   formData: FormData,
 ): Promise<FormActionState> {
-  const { user, organizationId } = await requireOrgScope();
+  const { user, organizationId, role } = await requireOrgScope();
 
-  const myUnits = await prisma.unitResident.findMany({
-    where: { userId: user.id, unit: { organizationId } },
-    select: { unitId: true },
-  });
-  const myUnitIds = new Set(myUnits.map((link) => link.unitId));
-
-  if (myUnitIds.size === 0) {
-    return { error: "You need to be linked to a unit to report an issue. Contact your building admin." };
-  }
+  const isAdmin = role === "ORG_ADMIN" || role === "STAFF";
 
   const parsed = createTicketSchema.safeParse({
     unitId: formData.get("unitId"),
@@ -35,13 +27,42 @@ export async function createTicket(
     description: formData.get("description"),
     category: formData.get("category"),
     priority: formData.get("priority"),
+    assigneeUserId: formData.get("assigneeUserId"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please check the form and try again." };
   }
 
-  if (!myUnitIds.has(parsed.data.unitId)) {
-    return { error: "You can only report issues for your own unit." };
+  if (!isAdmin) {
+    const myUnits = await prisma.unitResident.findMany({
+      where: { userId: user.id, unit: { organizationId } },
+      select: { unitId: true },
+    });
+    const myUnitIds = new Set(myUnits.map((link) => link.unitId));
+
+    if (myUnitIds.size === 0) {
+      return { error: "You need to be linked to a unit to report an issue. Contact your building admin." };
+    }
+
+    if (!myUnitIds.has(parsed.data.unitId)) {
+      return { error: "You can only report issues for your own unit." };
+    }
+  } else {
+    const unit = await prisma.unit.findFirst({ where: { id: parsed.data.unitId, organizationId } });
+    if (!unit) {
+      return { error: "Unit not found." };
+    }
+  }
+
+  let assigneeUserId: string | null = null;
+  if (role === "ORG_ADMIN" && parsed.data.assigneeUserId) {
+    const membership = await prisma.orgMembership.findFirst({
+      where: { userId: parsed.data.assigneeUserId, organizationId, role: "STAFF" },
+    });
+    if (!membership) {
+      return { error: "Selected staff member not found." };
+    }
+    assigneeUserId = parsed.data.assigneeUserId;
   }
 
   const ticket = await prisma.$transaction(async (tx) => {
@@ -54,6 +75,8 @@ export async function createTicket(
         description: parsed.data.description,
         category: parsed.data.category || null,
         priority: parsed.data.priority,
+        assignedToId: assigneeUserId,
+        assignedAt: assigneeUserId ? new Date() : null,
       },
     });
 

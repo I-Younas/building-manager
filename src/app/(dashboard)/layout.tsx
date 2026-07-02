@@ -32,7 +32,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     { href: "/dashboard/residents", label: dict.nav.residents },
     { href: "/dashboard/staff", label: dict.nav.staff },
   ];
-  const navItems = role !== "RESIDENT" ? [...navItemsBase, ...navItemsAdmin] : navItemsBase;
+  const navItems = role === "ORG_ADMIN" ? [...navItemsBase, ...navItemsAdmin] : navItemsBase;
 
   return (
     <div className="flex min-h-screen">

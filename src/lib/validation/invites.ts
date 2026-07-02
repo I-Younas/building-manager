@@ -2,8 +2,8 @@ import { z } from "zod";
 
 export const createInviteSchema = z.object({
   role: z.enum(["RESIDENT", "STAFF"]),
-  buildingName: z.string().trim().max(200).optional().or(z.literal("")),
-  unitNumber: z.string().trim().max(50).optional().or(z.literal("")),
+  buildingId: z.string().trim().optional().or(z.literal("")),
+  unitNumber: z.string().trim().max(20).optional().or(z.literal("")),
   email: z.string().trim().email("Enter a valid email address"),
   employeeId: z.string().trim().max(50).optional().or(z.literal("")),
 });

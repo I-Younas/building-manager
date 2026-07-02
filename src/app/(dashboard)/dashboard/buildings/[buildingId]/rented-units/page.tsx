@@ -5,10 +5,11 @@ import { prisma } from "@/lib/db";
 import { getLeaseDisplayStatus, getRenewalChain } from "@/lib/leases/status";
 import { EmptyState, PageHeader, StatusBadge, tableClasses, tableWrapClasses, tdClasses, thClasses, theadClasses, trClasses } from "@/components/ui";
 
-type SortKey = "unit" | "resident" | "leaseStart" | "leaseEnd" | "status" | "renewed" | "renewalCount" | "renewalStatus";
+type SortKey = "unit" | "floor" | "resident" | "leaseStart" | "leaseEnd" | "status" | "renewed" | "renewalCount" | "renewalStatus";
 
 const SORT_COLUMNS: { key: SortKey; label: string }[] = [
   { key: "unit", label: "Unit" },
+  { key: "floor", label: "Floor" },
   { key: "resident", label: "Resident" },
   { key: "leaseStart", label: "Lease start" },
   { key: "leaseEnd", label: "Lease end" },
@@ -54,6 +55,7 @@ export default async function RentedUnitsPage({
         return {
           unitId: unit.id,
           unitNumber: unit.unitNumber,
+          floor: unit.floor,
           residentName: lease.primaryResident.name,
           leaseStartDate: lease.leaseStartDate,
           leaseEndDate: lease.leaseEndDate,
@@ -70,6 +72,9 @@ export default async function RentedUnitsPage({
     switch (sortKey) {
       case "unit":
         cmp = a.unitNumber.localeCompare(b.unitNumber);
+        break;
+      case "floor":
+        cmp = (a.floor ?? "").localeCompare(b.floor ?? "");
         break;
       case "resident":
         cmp = a.residentName.localeCompare(b.residentName);
@@ -98,8 +103,8 @@ export default async function RentedUnitsPage({
 
   return (
     <div>
-      <Link href={`/dashboard/buildings/${building.id}`} className="text-sm text-blue-600 hover:underline">
-        ← {building.name}
+      <Link href="/dashboard/buildings" className="text-sm text-blue-600 hover:underline">
+        ← Buildings
       </Link>
       <PageHeader title={`${building.name} — Rented units`} />
 
@@ -134,6 +139,7 @@ export default async function RentedUnitsPage({
                       Unit {row.unitNumber}
                     </Link>
                   </td>
+                  <td className={tdClasses}>{row.floor ?? "—"}</td>
                   <td className={tdClasses}>{row.residentName}</td>
                   <td className={tdClasses}>{row.leaseStartDate.toLocaleDateString()}</td>
                   <td className={tdClasses}>{row.leaseEndDate.toLocaleDateString()}</td>
